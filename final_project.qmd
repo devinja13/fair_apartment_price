@@ -16,7 +16,7 @@ library(stringr)
 
 
 ```{r}
-data <- read.csv2("apartments.csv")
+data <- read.csv2("./apartment+for+rent+classified/apartments_for_rent_classified_100K.csv")
 
 
 
@@ -33,28 +33,29 @@ cleaned <- data %>%
               mutate(pets_allowed = ifelse(pets_allowed %in% c("Cats", "Dogs", "Cats, Dogs", "Cats, Dogs, None"), 1, 0)) %>%
               mutate(has_photo = ifelse(has_photo %in% c("Thumbnail", "Yes"), 1, 0)) %>%
               mutate(fee = ifelse(fee == "Yes", 1, 0))
-    data[is.na(suppressWarnings(as.numeric(data$column_name))), ]data[is.na(suppressWarnings(as.numeric(data$column_name))), ]
+data[is.na(suppressWarnings(as.numeric(data$column_name))), ]
+data[is.na(suppressWarnings(as.numeric(data$column_name))), ]
 
 # I was exploring the data
-unique(data$category)
+head(unique(data$category))
 
-unique(data$amenities)
+head(unique(data$amenities))
 
-unique(data$pets_allowed)
+head(unique(data$pets_allowed))
 
-unique(data$has_photo)
+head(unique(data$has_photo))
 
-unique(data$price_type)
-unique(data$fee)
-unique(data$cityname)
-sd(data$time, na.rm=TRUE)
+head(unique(data$price_type))
+head(unique(data$fee))
+head(unique(data$cityname))
+head(sd(data$time, na.rm=TRUE))
 
 #cleaning pets
 
 pet_test <- cleaned[!cleaned$pets_allowed %in% c("Cats", "Dogs", "Cats, Dogs", "None", "Cats, Dogs, None", "Cats,Dogs"), ]
 
 #delete the amenities, title, body columns, id, pets_allowed, latitude,
-# longitude, currency, citynames(too many), price_display, price_type, 
+# longitude, currency, citynames(too many), price_display, price_type,
 #address, cityname, source, maybe time
 
 #Columns that should be factors
@@ -70,27 +71,33 @@ cleaned$state <- as.factor(cleaned$state)
 
 
 ```
-1. If we want we could create categorical variables for each of the 
+1. If we want we could create categorical variables for each of the
 ammenitites like AC, fridge, gym, basketball, etc
 
 
 Getting the data
 
-
 ```{r}
 
 Y <- cleaned$square_feet
 
-x <- select(cleaned, as.numeric(bathrooms), bedrooms, fee, has_photo, pets_allowed, price)
-
-
-
+x <- select(cleaned, bathrooms, bedrooms, fee, has_photo, pets_allowed, price) %>% mutate(bathrooms = as.numeric(bathrooms), bedrooms = as.numeric(bedrooms), price = as.numeric(price), has_photo = as.numeric(has_photo), pets_allowed = as.numeric(pets_allowed), fee = as.numeric(fee))
+x$square_feet <- Y
 ```
+
 
 Correlation Matrix
 ```{r}
 
 cor(x)
-
+model <- lm(Y ~ ., data = x)
+summary(model)
+model <- lm(Y ~ bathrooms+ bedrooms+ price, data = x)
+summary(model)
+library(ggplot2)
+plot(x$bedrooms, x$square_feet)
+model2 <- lm(x$square_feet ~ x$bedrooms)
+abline(model2)
+cities <- read.csv2("./uscities.csv")
+head(cities$city.cityascii.state_id.statee_name.county_fips.county_name.la)
 ```
-
