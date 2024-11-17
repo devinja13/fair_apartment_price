@@ -7,7 +7,7 @@ editor: visual
 Libraries
 
 ```{r, echo=TRUE}
-
+library(ggplot2)
 library(data.table)
 library(dplyr)
 library(stringr)
@@ -16,18 +16,14 @@ library(stringr)
 ```
 
 ```{r}
+
 data <- read.csv2("apartments.csv")
-
-
 
 ```
 
 Data Cleaning
 
 ```{r}
-
-unique(data$currency)
-
 cleaned <- data %>%
               filter(currency == "USD", price_type == "Monthly", nchar(state) == 2, bathrooms != "null", !bedrooms %in% c("null", "USD", "") ) %>%
               mutate(pets_allowed = ifelse(pets_allowed %in% c("Cats", "Dogs", "Cats, Dogs", "Cats, Dogs, None"), 1, 0)) %>%
@@ -35,30 +31,7 @@ cleaned <- data %>%
               mutate(fee = ifelse(fee == "Yes", 1, 0))
   
 
-# I was exploring the data
-unique(data$category)
 
-unique(data$amenities)
-
-unique(data$pets_allowed)
-
-unique(data$has_photo)
-
-unique(data$price_type)
-unique(data$fee)
-unique(data$cityname)
-sd(data$time, na.rm=TRUE)
-
-#cleaning pets
-
-pet_test <- cleaned[!cleaned$pets_allowed %in% c("Cats", "Dogs", "Cats, Dogs", "None", "Cats, Dogs, None", "Cats,Dogs"), ]
-
-#delete the amenities, title, body columns, id, pets_allowed, latitude,
-# longitude, currency, citynames(too many), price_display, price_type, 
-#address, cityname, source, maybe time
-
-#Columns that should be factors
-#category, pets_allowed, has_photo, fee, state
 
 
 cleaned$category <- as.factor(cleaned$category)
@@ -72,6 +45,7 @@ cleaned$state <- as.factor(cleaned$state)
 ```
 
 Adding the city population and density to the data
+
 ```{r, echo=TRUE}
 
 cities <- read.csv("uscities.csv")
@@ -100,25 +74,100 @@ cleaned <- mutate(data, population = ifelse(is.na(population), pop_mean, populat
 
 ```
 
-
 1.  If we want we could create categorical variables for each of the ammenitites like AC, fridge, gym, basketball, etc
 
 Getting the data
 
 ```{r}
 
-Y <- cleaned$square_feet
+Y <- cleaned$price
 
 x <- select(cleaned, as.numeric(bathrooms), bedrooms, fee, has_photo, pets_allowed, price)
 
+cleaned$bathrooms <- as.numeric(cleaned$bathrooms)
+cleaned$bedrooms <- as.numeric(cleaned$bedrooms)
+cleaned$price <- as.numeric(cleaned$price)
+cleaned$density <- as.numeric(cleaned$density)
+cleaned$population <- as.numeric(cleaned$population)
+cleaned$square_feet <- as.numeric(cleaned$square_feet)
 
 
 ```
 
 Correlation Matrix
 
-```{r}
 
-cor(x)
+```{r, echo=TRUE}
+
+model <- lm(y ~ bathrooms, data = x)
+
 
 ```
+
+
+
+```{r, echo=TRUE}
+
+paste0(list, collaspe=",")
+
+regressor_list <- c("square_feet", "has_photo", "fee", "density", "population", "bathrooms", "bedrooms")
+
+model <- lm(price ~ bedrooms, data = cleaned)
+summary(model)
+
+
+# Run the regression function
+best_predictor <- regression(regressor_list, "")
+print(best_predictor)
+
+
+lm(price ~ square_feet, data=cleaned)
+
+regression <- function(regressors, add_col = NULL) {
+  low_pval <- 10
+  best_var <- NULL
+  
+  # Iterate through the regressors
+  for (i in regressors) {
+    # Dynamically create the formula
+    if (is.null(add_col) || length(add_col) == 0) {
+      formula <- reformulate(i, response = "price")
+    } else {
+      formula <- reformulate(c(add_col, i), response = "price")
+    }
+    
+    # Fit the linear model
+    model <- lm(formula, data = cleaned)
+    sum <- summary(model)
+    
+    # Extract the p-value for the slope (the last row of coefficients)
+    # Ensure the slope term exists
+    if (nrow(sum$coefficients) > 1) {
+      pvalue <- sum$coefficients[nrow(sum$coefficients), "Pr(>|t|)"]
+      
+      # Update the lowest p-value and corresponding variable
+      if (pvalue < low_pval) {
+        low_pval <- pvalue
+        best_var <- i
+      }
+    }
+  }
+  
+  # Return the variable with the lowest p-value
+  return(best_var)
+}
+
+# Example usage:
+regressor_list <- c("bathrooms")
+always_include <- c("square_feet", "density", "population", "bedrooms", "has_photo", "fee") # Example additional variables
+best_predictor <- regression(regressor_list, always_include)
+print(best_predictor)
+
+model <- lm(price ~ square_feet + density + population + bedrooms+
+              has_photo + fee + pets_allowed + bathrooms, data = cleaned)
+
+summary(model)
+
+```
+
+
