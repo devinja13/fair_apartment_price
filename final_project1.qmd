@@ -92,40 +92,24 @@ cleaned$population <- as.numeric(cleaned$population)
 cleaned$square_feet <- as.numeric(cleaned$square_feet)
 
 
+
 ```
 
 Correlation Matrix
 
 
-```{r, echo=TRUE}
-
-model <- lm(y ~ bathrooms, data = x)
-
-
-```
-
-
 
 ```{r, echo=TRUE}
-
-paste0(list, collaspe=",")
-
-regressor_list <- c("square_feet", "has_photo", "fee", "density", "population", "bathrooms", "bedrooms")
-
-model <- lm(price ~ bedrooms, data = cleaned)
-summary(model)
-
-
-# Run the regression function
-best_predictor <- regression(regressor_list, "")
-print(best_predictor)
-
-
-lm(price ~ square_feet, data=cleaned)
 
 regression <- function(regressors, add_col = NULL) {
   low_pval <- 10
   best_var <- NULL
+  adj_r2 <- 0
+  best_var_sum <- NULL
+  high_t_val <- 0
+  AIC <- NULL
+  AICc <- NULL
+  BIC <- NULL
   
   # Iterate through the regressors
   for (i in regressors) {
@@ -140,34 +124,125 @@ regression <- function(regressors, add_col = NULL) {
     model <- lm(formula, data = cleaned)
     sum <- summary(model)
     
+    
     # Extract the p-value for the slope (the last row of coefficients)
     # Ensure the slope term exists
     if (nrow(sum$coefficients) > 1) {
       pvalue <- sum$coefficients[nrow(sum$coefficients), "Pr(>|t|)"]
+      tvalue <- abs(sum$coefficients[nrow(sum$coefficients), "t value"])
       
       # Update the lowest p-value and corresponding variable
-      if (pvalue < low_pval) {
+      if (tvalue > high_t_val) {
         low_pval <- pvalue
         best_var <- i
+        adj_r2 <- sum$adj.r.squared
+        best_var_sum <- sum
+        high_t_val <- tvalue
+        AIC <- extractAIC(model, k=2)[2]
+        npar <- length(sum$coefficients) + 1;
+        n <- length(sum$residuals)
+        AICc <- AIC + 2*npar*(npar + 1) / (n - npar - 1)
+        BIC <- extractAIC(model, k = log(n))[2]
       }
     }
   }
-  
   # Return the variable with the lowest p-value
-  return(best_var)
+  print(best_var_sum)
+  return(c(best_var, low_pval, adj_r2, AIC, AICc, BIC))
 }
 
-# Example usage:
-regressor_list <- c("bathrooms")
-always_include <- c("square_feet", "density", "population", "bedrooms", "has_photo", "fee") # Example additional variables
-best_predictor <- regression(regressor_list, always_include)
-print(best_predictor)
-
-model <- lm(price ~ square_feet + density + population + bedrooms+
-              has_photo + fee + pets_allowed + bathrooms, data = cleaned)
-
-summary(model)
 
 ```
 
+
+Building the model first var
+```{r}
+regressor_list <- c("bedrooms", "bathrooms", "fee", "has_photo",
+                    "pets_allowed", "square_feet",
+                    "population", "density")
+
+new <- regression(regressor_list)
+new
+
+```
+
+Second Var
+```{r}
+regressor_list <- c("bedrooms", "bathrooms", "fee", "has_photo",
+                    "pets_allowed",
+                    "population", "density")
+always_include <- c("square_feet")
+
+new <- regression(regressor_list, always_include)
+new
+
+```
+Third Var
+```{r}
+regressor_list <- c("bedrooms", "bathrooms", "fee", "has_photo",
+                    "pets_allowed",
+                    "population")
+always_include <- c("square_feet", "density")
+
+new <- regression(regressor_list, always_include)
+new
+```
+Fourth Var
+```{r}
+regressor_list <- c("bedrooms", "bathrooms", "fee", "has_photo",
+                    "pets_allowed")
+always_include <- c("square_feet", "density", "population")
+
+new <- regression(regressor_list, always_include)
+new
+```
+Fifth Var
+```{r}
+regressor_list <- c("bedrooms", "fee", "has_photo",
+                    "pets_allowed")
+always_include <- c("square_feet", "density", "population", "bathrooms")
+
+new <- regression(regressor_list, always_include)
+new
+```
+
+Sixth Var
+```{r}
+regressor_list <- c("fee", "has_photo",
+                    "pets_allowed")
+always_include <- c("square_feet", "density", "population", "bathrooms", "bedrooms")
+
+new <- regression(regressor_list, always_include)
+new
+```
+
+
+Seventh Var
+```{r}
+regressor_list <- c("fee",
+                    "pets_allowed")
+always_include <- c("square_feet", "density", "population", "bathrooms", "bedrooms", "has_photo")
+
+new <- regression(regressor_list, always_include)
+new
+```
+
+Eigth Var
+```{r}
+regressor_list <- c("fee")
+always_include <- c("square_feet", "density", "population", "bathrooms", "bedrooms", "has_photo", "pets_allowed")
+
+new <- regression(regressor_list, always_include)
+new
+```
+
+
+Final First Step Model
+```{r}
+
+model <- lm(price ~ square_feet + density + population + bathrooms + 
+              bedrooms + has_photo + pets_allowed + fee, data=cleaned)
+summary(model)
+
+```
 
