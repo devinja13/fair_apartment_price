@@ -82,7 +82,6 @@ Getting the data
 
 Y <- cleaned$price
 
-x <- select(cleaned, as.numeric(bathrooms), bedrooms, fee, has_photo, pets_allowed, price)
 
 cleaned$bathrooms <- as.numeric(cleaned$bathrooms)
 cleaned$bedrooms <- as.numeric(cleaned$bedrooms)
