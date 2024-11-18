@@ -1,0 +1,67 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[utf8]{inputenc}
+\newcommand{\myparagraph}[1]{\paragraph{#1}\mbox{}\\}
+\usepackage[a4paper,margin=3.5cm]{geometry} %Sets the page geometry
+\usepackage{url}
+\usepackage{dirtytalk}
+\usepackage{graphicx} % Package for \includegraphics
+\usepackage{wrapfig} % Figure wrapping
+\usepackage[T1]{fontenc} % Output font encoding for international characters
+\setlength{\parskip}{1em} % Set space when paragraphs are used
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{tcolorbox}
+\usepackage{mathtools}
+\usepackage{stmaryrd}
+
+% Lets you use \blankpage to make a blank page
+\newcommand{\blankpage}{
+\newpage
+\thispagestyle{empty}
+\mbox{}
+\newpage
+}
+
+% Self Explanatory
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{definition}{Definition}[section]
+\newtheorem{corollary}{Corollary}[theorem]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proof}{Proof}[section]
+
+% Other
+\DeclarePairedDelimiter\floor{\lfloor}{\rfloor} %Floor function
+
+\begin{document}
+    \begin{titlepage}
+    \begin{center}
+        \vspace*{3cm}
+
+        \Huge
+        \textbf{Stat 410}
+
+        \vspace{0.5cm}
+        \LARGE
+        Final Presentation
+
+        \vspace{1.5cm}
+
+        \textbf{Jack Dzialo}
+
+        \vfill
+
+    \end{center}
+\end{titlepage}
+
+\section*{Purpose}
+
+When coming up with ideas for our final project, we wanted to work on something that related to a real problem that we had in our lives. Some of our groupmmates are in the proccess of looking for housing for next year, which can be a very confusing process. There are many houses on the market, and with how different each house is, it can be hard to determine what is a fair price.
+
+Therefore, for our final project, we aim to address the problem of accurately predicting apartment prices based on a variety of influencing factors. Our primary goal is to develop a reliable regression model that can assess the fairness of rental prices, providing a valuable tool for prospective renters to make informed decisions. Of particular interest are the effects of variables such as location, size, amenities, and neighborhood characteristics on rental costs, as understanding these can aid in identifying key drivers of price variations. By achieving these objectives, we hope to contribute to a more transparent rental market.
+
+\section*{Proposal}
+
+First bullet - use F tests in order to see if predictor is statistically significant\\
+AIC, AICc, and BIC minimalized while maximizing $R^2$, PRESS to determine (use definition)
+
+\end{document}
