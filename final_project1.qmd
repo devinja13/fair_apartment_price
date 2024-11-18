@@ -17,7 +17,7 @@ library(stringr)
 
 ```{r}
 
-data <- read.csv2("apartments.csv")
+data <- read.csv2("~/Downloads/apartments.csv")
 
 ```
 
@@ -29,18 +29,6 @@ cleaned <- data %>%
               mutate(pets_allowed = ifelse(pets_allowed %in% c("Cats", "Dogs", "Cats, Dogs", "Cats, Dogs, None"), 1, 0)) %>%
               mutate(has_photo = ifelse(has_photo %in% c("Thumbnail", "Yes"), 1, 0)) %>%
               mutate(fee = ifelse(fee == "Yes", 1, 0))
-  
-
-
-
-
-cleaned$category <- as.factor(cleaned$category)
-cleaned$pets_allowed <- as.factor(cleaned$pets_allowed)
-cleaned$has_photo <- as.factor(cleaned$has_photo)
-cleaned$fee <- as.factor(cleaned$fee)
-cleaned$state <- as.factor(cleaned$state)
-
-
 
 ```
 
@@ -48,7 +36,7 @@ Adding the city population and density to the data
 
 ```{r, echo=TRUE}
 
-cities <- read.csv("uscities.csv")
+cities <- read.csv("~/Downloads/uscities.csv")
 
 cleaned <- cleaned %>%
   mutate(city = tolower(cityname), state = tolower(state))
@@ -90,11 +78,16 @@ cleaned$density <- as.numeric(cleaned$density)
 cleaned$population <- as.numeric(cleaned$population)
 cleaned$square_feet <- as.numeric(cleaned$square_feet)
 
+set.seed(4092)
+train <- sample(1: length(Y), .9 * length(Y))
+trained <- cleaned[train,]
+table(trained$has_photo)
+heldout <- cleaned[-train,]
+
+
 
 
 ```
-
-Correlation Matrix
 
 
 
@@ -120,7 +113,7 @@ regression <- function(regressors, add_col = NULL) {
     }
     
     # Fit the linear model
-    model <- lm(formula, data = cleaned)
+    model <<- lm(formula, data = trained)
     sum <- summary(model)
     
     
@@ -156,35 +149,49 @@ regression <- function(regressors, add_col = NULL) {
 
 Building the model first var
 ```{r}
-regressor_list <- c("bedrooms", "bathrooms", "fee", "has_photo",
+regressor_list <- c("bedrooms", "bathrooms", "has_photo",
                     "pets_allowed", "square_feet",
                     "population", "density")
 
 new <- regression(regressor_list)
 new
 
+heldout$prediction = predict(object = model, newdata = heldout)
+
+err <- heldout$prediction - heldout$price
+mse <- mean(err^2)
+
 ```
 
 Second Var
 ```{r}
-regressor_list <- c("bedrooms", "bathrooms", "fee", "has_photo",
+regressor_list <- c("bedrooms", "bathrooms", "has_photo",
                     "pets_allowed",
                     "population", "density")
 always_include <- c("square_feet")
 
 new <- regression(regressor_list, always_include)
 new
+heldout$prediction = predict(object = model, newdata = heldout)
+
+err <- heldout$prediction - heldout$price
+mse <- mean(err^2)
 
 ```
 Third Var
 ```{r}
-regressor_list <- c("bedrooms", "bathrooms", "fee", "has_photo",
+regressor_list <- c("bedrooms", "bathrooms", "has_photo",
                     "pets_allowed",
                     "population")
 always_include <- c("square_feet", "density")
 
 new <- regression(regressor_list, always_include)
 new
+
+heldout$prediction = predict(object = model, newdata = heldout)
+
+err <- heldout$prediction - heldout$price
+mse <- mean(err^2)
 ```
 Fourth Var
 ```{r}
@@ -240,8 +247,19 @@ Final First Step Model
 ```{r}
 
 model <- lm(price ~ square_feet + density + population + bathrooms + 
-              bedrooms + has_photo + pets_allowed + fee, data=cleaned)
+              bedrooms + has_photo + pets_allowed + fee, data=trained)
 summary(model)
 
 ```
+
+
+```{r}
+
+heldout$prediction = predict(object = model, newdata = heldout)
+
+err <- heldout$prediction - heldout$price
+mse <- mean(err^2)
+
+```
+
 
