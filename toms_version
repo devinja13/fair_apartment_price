@@ -1,0 +1,284 @@
+---
+title: "Apartment Regression"
+format: pdf
+editor: visual
+---
+
+Libraries
+
+```{r, echo=TRUE}
+library(ggplot2)
+library(data.table)
+library(dplyr)
+library(stringr)
+library(car)
+
+
+```
+
+```{r}
+
+data <- read.csv2("~/Downloads/apartments.csv")
+
+```
+
+Data Cleaning
+
+```{r}
+cleaned <- data %>%
+              filter(currency == "USD", price_type == "Monthly", nchar(state) == 2, bathrooms != "null", !bedrooms %in% c("null", "USD", "") ) %>%
+              mutate(pets_allowed = ifelse(pets_allowed %in% c("Cats", "Dogs", "Cats, Dogs", "Cats, Dogs, None"), 1, 0)) %>%
+              mutate(has_photo = ifelse(has_photo %in% c("Thumbnail", "Yes"), 1, 0))
+  
+```
+
+Adding the city population and density to the data
+
+```{r, echo=TRUE}
+
+cities <- read.csv("~/Downloads/uscities.csv")
+
+cleaned <- cleaned %>%
+  mutate(city = tolower(cityname), state = tolower(state))
+cities <- cities %>%
+  mutate(city = tolower(city), state = tolower(state_id))
+
+cleaned <- cleaned %>%
+  mutate(city = trimws(city), state = trimws(state))
+cities <- cities %>%
+  mutate(city = trimws(city), state = trimws(state))
+
+
+data <- cleaned %>%
+  left_join(cities %>% select(city, state, population, density), 
+            by = c("city", "state"))
+
+#can do either median or mean. 
+pop_mean <- (mean(cities$population, na.rm=TRUE))
+
+density_med <- mean(cities$density, na.rm=TRUE)
+
+cleaned <- mutate(data, population = ifelse(is.na(population), pop_mean, population), density = ifelse(is.na(density), density_med, density))
+
+```
+
+1.  If we want we could create categorical variables for each of the ammenitites like AC, fridge, gym, basketball, etc
+
+Getting the data
+
+```{r}
+
+Y <- cleaned$price
+
+
+cleaned$bathrooms <- as.numeric(cleaned$bathrooms)
+cleaned$bedrooms <- as.numeric(cleaned$bedrooms)
+cleaned$price <- as.numeric(cleaned$price)
+cleaned$density <- as.numeric(cleaned$density)
+cleaned$population <- as.numeric(cleaned$population)
+cleaned$square_feet <- as.numeric(cleaned$square_feet)
+
+
+
+```
+
+Correlation Matrix
+
+```{r, echo=TRUE}
+
+regression <- function(regressors, add_col = NULL) {
+  low_pval <- 10
+  best_var <- NULL
+  adj_r2 <- 0
+  best_var_sum <- NULL
+  high_t_val <- 0
+  AIC <- NULL
+  AICc <- NULL
+  BIC <- NULL
+  
+  # Iterate through the regressors
+  for (i in regressors) {
+    # Dynamically create the formula
+    if (is.null(add_col) || length(add_col) == 0) {
+      formula <- reformulate(i, response = "price")
+    } else {
+      formula <- reformulate(c(add_col, i), response = "price")
+    }
+    
+    # Fit the linear model
+    model <- lm(formula, data = cleaned)
+    sum <- summary(model)
+    
+    
+    # Extract the p-value for the slope (the last row of coefficients)
+    # Ensure the slope term exists
+    if (nrow(sum$coefficients) > 1) {
+      pvalue <- sum$coefficients[nrow(sum$coefficients), "Pr(>|t|)"]
+      tvalue <- abs(sum$coefficients[nrow(sum$coefficients), "t value"])
+      
+      # Update the lowest p-value and corresponding variable
+      if (tvalue > high_t_val) {
+        low_pval <- pvalue
+        best_var <- i
+        adj_r2 <- sum$adj.r.squared
+        best_var_sum <- sum
+        high_t_val <- tvalue
+        AIC <- extractAIC(model, k=2)[2]
+        npar <- length(sum$coefficients) + 1;
+        n <- length(sum$residuals)
+        AICc <- AIC + 2*npar*(npar + 1) / (n - npar - 1)
+        BIC <- extractAIC(model, k = log(n))[2]
+      }
+    }
+  }
+  # Return the variable with the lowest p-value
+  print(best_var_sum)
+  return(c(best_var, low_pval, adj_r2, AIC, AICc, BIC))
+}
+
+
+```
+
+Building the model first var
+
+```{r}
+regressor_list <- c("bedrooms", "bathrooms", "has_photo",
+                    "pets_allowed", "square_feet",
+                    "population", "density")
+
+new <- regression(regressor_list)
+new
+
+```
+
+Second Var
+
+```{r}
+regressor_list <- c("bedrooms", "bathrooms", "has_photo",
+                    "pets_allowed",
+                    "population", "density")
+always_include <- c("square_feet")
+
+new <- regression(regressor_list, always_include)
+new
+
+#Prediction Interval
+model <- lm(Y ~ square_feet + density, data = cleaned)
+summary(model)
+predict_houston <- expand.grid(square_feet = seq(from = 100, to = 1500, by = 50), density = 1384)
+predict_houston$prediction_intervals <- predict(model, newdata = predict_houston, interval = "prediction", level = .95)
+summary(cleaned$square_feet)
+
+#Confidence Interval
+model <- lm(Y ~ square_feet + density, data = cleaned)
+summary(model)
+confidence_houston <- expand.grid(square_feet = seq(from = 100, to = 1500, by = 50), density = 1384)
+confidence_houston$confidence_intervals <- predict(model, newdata = confidence_houston, interval = "confidence", level = .95)
+summary(cleaned$square_feet)
+
+
+
+```
+
+Third Var
+
+```{r}
+regressor_list <- c("bedrooms", "bathrooms", "has_photo",
+                    "pets_allowed",
+                    "population")
+always_include <- c("square_feet", "density")
+
+new <- regression(regressor_list, always_include)
+
+a <- lm(price ~ square_feet + population + density, data=cleaned)
+vif(a)
+
+new
+```
+
+Fourth Var
+
+```{r}
+regressor_list <- c("bedrooms", "bathrooms", "has_photo",
+                    "pets_allowed")
+always_include <- c("square_feet", "density", "population")
+
+new <- regression(regressor_list, always_include)
+new
+```
+
+Fifth Var
+
+```{r}
+regressor_list <- c("bedrooms", "has_photo",
+                    "pets_allowed")
+always_include <- c("square_feet", "density", "population", "bathrooms")
+
+new <- regression(regressor_list, always_include)
+new
+```
+
+Sixth Var
+
+```{r}
+regressor_list <- c("has_photo",
+                    "pets_allowed")
+always_include <- c("square_feet", "density", "population", "bathrooms", "bedrooms")
+
+new <- regression(regressor_list, always_include)
+new
+```
+
+Seventh Var
+
+```{r}
+regressor_list <- c(
+                    "pets_allowed")
+always_include <- c("square_feet", "density", "population", "bathrooms", "bedrooms", "has_photo")
+
+new <- regression(regressor_list, always_include)
+new
+```
+
+Final First Step Model
+
+```{r}
+
+model <- lm(price ~ square_feet + density + population + bathrooms + 
+              bedrooms + has_photo + pets_allowed, data=cleaned)
+plot(model)
+vif(model)
+
+summary(model)
+
+```
+
+
+
+```{r, echo=TRUE}
+
+x <- cleaned %>%
+      select(bathrooms, bedrooms, square_feet, has_photo, pets_allowed, density, population) %>%
+  mutate(bathrooms = as.numeric(bathrooms), bedrooms = as.numeric(bedrooms), square_feet = as.numeric(square_feet), has_photo = as.numeric(has_photo), pets_allowed = as.numeric(pets_allowed), density = as.numeric(density), population = as.numeric(population))
+
+x <- as.matrix(x)
+
+correlation <- cor(x)
+
+plot(cor(x))
+pairs(x)
+
+a <- x[, c("bathrooms", "bedrooms", "square_feet", "density", "population")]
+
+pairs(a, main="Comparison of Continous Regressors")
+
+```
+
+
+
+```{r}
+
+vif <- solve(cor(x))
+diag(vif)
+
+```
