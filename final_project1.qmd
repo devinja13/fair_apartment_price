@@ -195,51 +195,62 @@ mse <- mean(err^2)
 ```
 Fourth Var
 ```{r}
-regressor_list <- c("bedrooms", "bathrooms", "fee", "has_photo",
+regressor_list <- c("bedrooms", "bathrooms", "has_photo",
                     "pets_allowed")
 always_include <- c("square_feet", "density", "population")
 
 new <- regression(regressor_list, always_include)
 new
+
+heldout$prediction = predict(object = model, newdata = heldout)
+
+err <- heldout$prediction - heldout$price
+mse <- mean(err^2)
 ```
 Fifth Var
 ```{r}
-regressor_list <- c("bedrooms", "fee", "has_photo",
+regressor_list <- c("bedrooms", "has_photo",
                     "pets_allowed")
 always_include <- c("square_feet", "density", "population", "bathrooms")
 
 new <- regression(regressor_list, always_include)
 new
+
+heldout$prediction = predict(object = model, newdata = heldout)
+
+err <- heldout$prediction - heldout$price
+mse <- mean(err^2)
 ```
 
 Sixth Var
 ```{r}
-regressor_list <- c("fee", "has_photo",
+regressor_list <- c("has_photo",
                     "pets_allowed")
 always_include <- c("square_feet", "density", "population", "bathrooms", "bedrooms")
 
 new <- regression(regressor_list, always_include)
 new
+
+heldout$prediction = predict(object = model, newdata = heldout)
+
+err <- heldout$prediction - heldout$price
+mse <- mean(err^2)
 ```
 
 
 Seventh Var
 ```{r}
-regressor_list <- c("fee",
+regressor_list <- c(
                     "pets_allowed")
 always_include <- c("square_feet", "density", "population", "bathrooms", "bedrooms", "has_photo")
 
 new <- regression(regressor_list, always_include)
 new
-```
 
-Eigth Var
-```{r}
-regressor_list <- c("fee")
-always_include <- c("square_feet", "density", "population", "bathrooms", "bedrooms", "has_photo", "pets_allowed")
+heldout$prediction = predict(object = model, newdata = heldout)
 
-new <- regression(regressor_list, always_include)
-new
+err <- heldout$prediction - heldout$price
+mse <- mean(err^2)
 ```
 
 
@@ -247,7 +258,7 @@ Final First Step Model
 ```{r}
 
 model <- lm(price ~ square_feet + density + population + bathrooms + 
-              bedrooms + has_photo + pets_allowed + fee, data=trained)
+              bedrooms + has_photo + pets_allowed, data=trained)
 summary(model)
 
 ```
