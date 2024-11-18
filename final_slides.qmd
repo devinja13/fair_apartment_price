@@ -46,7 +46,7 @@ TODO: CI of sample house around Rice
 ## Data Collection
 
 ::: {.incremental}
-- Dataset of apartments for rent, sourced from [UCI dataset repository]{https://archive.ics.uci.edu/dataset/555/apartment+for+rent+classified}
+- Dataset of apartments for rent, sourced from [UCI dataset repository](https://archive.ics.uci.edu/dataset/555/apartment+for+rent+classified)
 - [100,000]{.bg style="--col: #D0E1F9"} rows, each representing a different apartment
 - [22]{.bg style="--col: #D0E1F9"} columns, each representing a descriptor for an apartment listing
   - Square feet, apartment type, number of bathrooms, has photos
@@ -350,9 +350,17 @@ table <- data.frame(
 ```{r}
 model <- lm(price ~ square_feet + density, data=cleaned)
 model1 <- lm(price1 ~ square_feet + density, data=cleaned)
+summary(model <- lm(price ~ square_feet + density, data=cleaned))
+p <- boxCox(model)
+which(max(p$y)==p$y)
+lambda <- p$x[48]
+cleaned$boxPrice <- (cleaned$price^lambda - 1) / lambda
+summary(lm(boxPrice ~ square_feet + density, data=cleaned))
 summary(model)
 summary(model1)
 plot(model, which = 1)
+plot(model1, which = 1)
+
 ```
 The above plot shows some heteroscedasticity on the higher end of the fitted values, but it's not that much so it's okay. (Shows that model is less accurate for higher fitted values). Listings on either extreme end have some other factors? FIX
 
@@ -365,7 +373,7 @@ plot(model, which = 2)
 plot(model1, which = 2)
 ```
 
-The Q-Q residual plot shows deviations at both extremes, indicating that our dataset is not normally distributed. This suggests that factors beyond our model may influence prices for listings that are either very inexpensive or highly expensive. For pricier listings, this may be attributable to luxury features, while for more affordable ones, underlying issues with the property could be to blame. (Add to different file and read off of there, this is too long to be on the slide) Use boxCox() to show that taking the log makes for a better model. Compare different models and show that log(price) model is better, better residuals. Maybe do anotehr residual analysis.
+The Q-Q residual plot shows deviations at both extremes, indicating that our response variable is not normally distributed. This suggests that factors beyond our model may influence prices for listings that are either very inexpensive or highly expensive. For pricier listings, this may be attributable to luxury features, while for more affordable ones, underlying issues with the property could be to blame. (Add to different file and read off of there, this is too long to be on the slide) Use boxCox() to show that taking the log makes for a better model. Compare different models and show that log(price) model is better, better residuals. Maybe do anotehr residual analysis.
 
 ## Residuals
 
@@ -389,9 +397,17 @@ There are some high leverage points that fall outside of the Cook distance, two 
 
 ## Adjusted Model
 
-### Mitigate the effects of high leverage points
+### Analyzing high leverage points
 
 Please remove oultlier points found in the previous plots (the numbered ones), and show new $R^2$. Points of interest are 20556, 18779, 6754, as they appear in multiple of the plots. Analyze and explain why they are bad.
+
+## Adjusted Model
+
+### Model without high leverage
+
+## Adjusted Model
+
+### Adjust for normallity of residuals
 
 ## Confidence Interval
 
