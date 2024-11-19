@@ -4,7 +4,7 @@ subtitle: "Stat 410 Final Project"
 author: "Jack Dzialo, Devin Abraham, Tom Vincent"
 format:
   revealjs:
-    theme: ./_extensions/grantmcdermott/clean/clean.scss
+    theme: ./clean.scss
     transition: fade
 ---
 
@@ -596,6 +596,27 @@ knitr::kable(exp(predictions))
 
 ## Summary
 
-Talk about what ways we can improve the model in the future.
+::: {.incremental}
+- Explored the data and found 8 usable regressors 5 of which were continuous and 3 of which were categorical 
+- We used Forward Step wise Search to build our model and found 2 regressors for our final model, square_feet and density
+- Adjusted our model to take the log of price which improved $R^2$
+:::
+
+
+
+---
+
+Limitations
+
+::: {.incremental}
+- Since Forward Step Wise Search is a greedy algorithm so it makes the best choice at each step and does not guarentee the most optimal solution 
+- In the future we would like a data set with more regressors, our group hypothesizes that a regressor that represents the apartments luxuriousness would have a significant impact
+:::
+
+
+
+
+
+
 
 # [Thank you]{.bg style="--col: #3929E9"} for listening!
