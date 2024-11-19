@@ -4,15 +4,13 @@ subtitle: "Stat 410 Final Project"
 author: "Jack Dzialo, Devin Abraham, Tom Vincent"
 format:
   revealjs:
-    theme: ./clean.scss
+    theme: ./_extensions/grantmcdermott/clean/clean.scss
     transition: fade
 ---
 
 ## Purpose
 
 ### Why choose our dataset?
-
-TODO: CI of sample house around Rice
 
 ::: {.incremental}
 - Aimed to address an [actual]{.bg style="--col: #D0E1F9"} problem that we face
@@ -252,8 +250,8 @@ After fitting the model with every predictor, we find that the [Density]{.bg sty
 :::
 :::
 
-::: {.fragment}
-Comparing the two, we see that the $R^2$ increased significantly, showing that the model's accuracy improved when including [density]{.bg style="--col: #D0E1F9"}. Secondly, **AIC**, **AICc**, **BIC**, and **PRESS** all got smaller, meaning that the model is better even when accounting for complexity and overfitting, and generalizes new data better.
+::: {.fragment .r-fit-text}
+The model improved when including [density]{.bg style="--col: #D0E1F9"}, while **AIC**, **AICc**, **BIC**, **PRESS** got smaller.
 :::
 
 ## Forward Stepwise Search {auto-animate=true}
@@ -285,7 +283,7 @@ After fitting the model with every predictor, we find that the [Population]{.bg 
 :::
 :::
 
-## Forward Stepwise Search {auto-animate=true .smaller}
+## Forward Stepwise Search {auto-animate=true}
 
 ### Third Iteration
 
@@ -303,7 +301,9 @@ After fitting the model with every predictor, we find that the [Population]{.bg 
 :::
 
 ::: {.fragment}
-Yet, when we compare this with the previous iteration we noticed that $R^2$ increased, show that the model's accuracy improved. But the **AIC**, **AICc**, **BIC**, and **PRESS** changed by negligible amounts, meaning that the model is more complicated and may be overfitting the data.
+::: {.center style="text-align: center;"}
+[Negligible]{.bg style="--col: #D0E1F9"} improvement
+:::
 :::
 
 ## Forward Stepwise Search
@@ -320,8 +320,8 @@ $$
 ::: {.fragment}
 ::: {.columns}
 ::: {.column width="40%"}
-::: {.center}
-We can see that about 32% of the variation in price can be explained by variation due variation in the unit's square footage and the density of the city. In addition, the likelihood any of the coefficients true value is 0 is extremeley close to 0. 
+::: {.center style="text-align: center;"}
+[32%]{.bg style="--col: #D0E1F9"} of the variation in price explained by model
 :::
 :::
 :::{.column width="60%"}
@@ -343,132 +343,259 @@ table <- data.frame(
 :::
 :::
 
+# [Analysis of Residuals]{.bg style="--col: #3929E9"} - Model Improvement
+
 ## Residuals
 
 ### Residuals vs. Fitted Values
+:::{.center style="text-align: center;"}
 
 ```{r}
 model <- lm(price ~ square_feet + density, data=cleaned)
-model1 <- lm(price1 ~ square_feet + density, data=cleaned)
-summary(model <- lm(price ~ square_feet + density, data=cleaned))
-p <- boxCox(model)
-which(max(p$y)==p$y)
-lambda <- p$x[48]
-cleaned$boxPrice <- (cleaned$price^lambda - 1) / lambda
-summary(lm(boxPrice ~ square_feet + density, data=cleaned))
-summary(model)
-summary(model1)
 plot(model, which = 1)
-plot(model1, which = 1)
-
 ```
-The model shows randomly scattered errors for the most part. There are a few outliers points and the model decreases in accuracy for extreme fitted values. Since our model is not able to discern luxury apartments this may explain some of the large outliers.
 
+Slight [heteroskedasticity]{.bg style="--col: #D0E1F9"}
+:::
 
 ## Residuals
 
 ### Quantile-Quantile
 
+:::{.center style="text-align: center;"}
 ```{r}
 plot(model, which = 2)
-plot(model1, which = 2)
 ```
-
-The Q-Q residual plot shows a normal distribution for the majority of the data. The plot has deviates from the normal distribution around the extremes meaning our plot struggles to predict very large rents, but for the vast majority of the data it follows a normal distribution. Again this could be due to luxury features that our data could not capture.
-
+Relatively normal, room for improvement
+:::
 
 ## Residuals
 
 ### Scale-Location
 
+:::{.center style="text-align: center;"}
 ```{r}
 plot(model, which = 3)
-plot(model1, which = 3)
 ```
 
-The Scale Location plot is not ideal as the red line should be horizontal. The means homoscedacity is violated, but this is likely to higher variation in high fitted values. As prices become more expensive there are factors we can not account for especially with luxury apartments. 
-
+Another heteroskedasticity indicator
+:::
 
 
 ## Residuals
 
 ### Residuals vs. Leverage
 
+:::{.center style="text-align: center;"}
 ```{r}
 plot(model, which = 5)
-plot(model1, which = 5)
 ```
-The dotted lines show Cook's distance and just a few point are outside its bound meaning they are points of high leverage
+Multiple high leverage points
+:::
 
 ## Adjusted Model
 
-### Analyzing high leverage points
+### Outliers and Data Transformation
 
-Please remove oultlier points found in the previous plots (the numbered ones), and show new $R^2$. 
+::: {.columns}
+::: {.column width="30%"}
+::: {.fragment}
+Address non-normality through [Box-Cox]{.bg style="--col: #D0E1F9"} transformation
+:::
 
-After removing the three outlier points, we see a big increase in our $R^2$ value. 
-
+:::
+::: {.column width="70%"}
+::: {.fragment}
 ```{r}
-
-old_r_squared <- summary(model)$r.squared  # Old R^2 value
-cat("Old R^2 value from the original model:", old_r_squared, "\n")
-
-# Fit the initial model
-model <- lm(price ~ square_feet + density, data = cleaned)
-cleaned_no_outliers <- cleaned[-c(8725, 9874, 9880), ]
-model_no_outliers <- lm(price ~ square_feet + density, data = cleaned_no_outliers)
-summary_no_outliers <- summary(model_no_outliers)
-cat("New R^2 value after removing outliers:", summary_no_outliers$r.squared, "\n")
-
-# Step 2: Calculate the hat values for all data points
-hat_values <- hatvalues(model)
-
-# Step 3: Extract the hat values for the three identified points
-leverage_points <- c(8725, 9874, 9880)
-leverage_values <- hat_values[leverage_points]
-n <- nrow(cleaned)
-p <- length(coefficients(model))
-leverage_threshold <- 2 * p / n
-
-cat("These are the leverage values: ", leverage_values, "\n")
-cat("This is the leverage Threshold: ", leverage_threshold)
-
-
-
-
+boxCox(model)
 ```
+:::
+:::
+:::
 
+::: {.columns}
+::: {.column width="40%"}
+::: {.fragment}
+- Optimal $\lambda$ close to 0
+:::
+:::
+
+::: {.column width="60%"}
+::: {.fragment}
+$$
+y(\lambda) =
+\begin{cases}
+\frac{y^\lambda - 1}{\lambda}, & \text{if } \lambda \neq 0 \\[10pt]
+\ln(y), & \text{if } \lambda = 0
+\end{cases}
+$$
+:::
+:::
+:::
 
 ## Adjusted Model
 
-### Model without high leverage
+### Summary
 
-The points we identified above are leverage points. Removing them reduced the discrepancy between the predicted values and the residuals, as demonstrated in the graph below. Overfitting is not a concern, as we verified that these outlier points were indeed leverage points before excluding them.
+Our adjusted model is: $\text{ln}(Y)=\beta_0+X_1\beta_1+X_2\beta_2$
 
 ```{r}
-
-plot(model_no_outliers, which = 2)
+cleaned_new <- cleaned[-c(6754, 20556, 18779, 29745), ]
+cleaned_new1 <- cleaned_new[-15668, ]
+model_new <- lm(log(price) ~ square_feet + density, data=cleaned_new1)
+summary_model <- summary(model_new)
+table <- data.frame(
+  Statistic = c("Intercept", "Square Feet", "Density"),
+  Values = c(round(summary_model$coefficients[1,1], 4),round(summary_model$coefficients[2,1], 4),round(summary_model$coefficients[3,1], 4)),
+  SE = c(round(summary_model$coefficients[1,2],4),round(summary_model$coefficients[2,2], 4),round(summary_model$coefficients[3,2],4)),
+  P_Value = c(summary_model$coefficients[1,4],summary_model$coefficients[2,4],summary_model$coefficients[3,4]),
+  R_Squared = c(round(summary_model$r.squared,4), "", "")
+)
+  knitr::kable(table, caption = "Summary of Model")
 ```
 
+::: {.fragment}
+::: {.center style="text-align: center;"}
+[Improved]{.bg style="--col: #D0E1F9"} $R^2$
+:::
+:::
+
+
+## Adjusted Model Residuals
+
+### Residuals vs. Fitted Values
+
+
+::: {.columns}
+::: {.column width=50%}
+**Previous**
+```{r fig.height=8, fig.width=10}
+plot(model, which = 1)
+```
+
+:::
+::: {.column width=50%}
+**Adjusted**
+```{r fig.height=8, fig.width=10}
+plot(model_new, which = 1)
+```
+:::
+:::
+:::{.center style="text-align: center;"}
+Normallity improved slightly
+:::
+
+
+## Adjusted Model Residuals
+
+### Quantile-Quantile
+
+::: {.columns}
+::: {.column width=50%}
+**Previous**
+```{r fig.height=8, fig.width=10}
+plot(model, which = 2)
+```
+
+:::
+::: {.column width=50%}
+**Adjusted**
+```{r fig.height=8, fig.width=10}
+plot(model_new, which = 2)
+```
+:::
+:::
+
+:::{.center style="text-align: center;"}
+[Significant]{.bg style="--col: #D0E1F9"} improvement
+:::
+
+
+## Adjusted Model Residuals
+
+### Scale-Location
+
+::: {.columns}
+::: {.column width=50%}
+**Previous**
+```{r fig.height=8, fig.width=10}
+plot(model, which = 3)
+```
+
+:::
+::: {.column width=50%}
+**Adjusted**
+```{r fig.height=8, fig.width=10}
+plot(model_new, which = 3)
+```
+:::
+:::
+:::{.center style="text-align: center;"}
+Slight homoscedasticity
+:::
+
+
+## Adjusted Model Residuals
+
+### Residuals vs. Leverage
+
+::: {.columns}
+::: {.column width=50%}
+**Previous**
+```{r fig.height=8, fig.width=10}
+plot(model, which = 5)
+```
+
+:::
+::: {.column width=50%}
+**Adjusted**
+```{r fig.height=8, fig.width=10}
+plot(model_new, which = 5)
+```
+:::
+:::
+
+:::{.center style="text-align: center;"}
+Less high leverage points/outliers
+:::
 
 
 ## Confidence Interval
 
-### Find an actual listing around rice and apply model
+### Real Apartment Listing
 
+
+::: {.columns}
+::: {.column width=50%}
+::: {.fragment}
+![](apartment_photo.png)
+:::
+:::
+::: {.column width="50%"}
+::: {.fragment}
+The confidence interval generated by the model:
 ```{r}
-
-predictions <- predict(model, data.frame(square_feet = c(2171), density = c(7000)), interval = "confidence", level = 0.95)
-predictions
-
-predictions <- predict(model1, data.frame(square_feet = c(2171), density = c(7000)), interval = "confidence", level = 0.95)
-exp(predictions)
-new_data <- data.frame(square_feet = 2171, density = 7000)
-confidence_interval <- predict(model_no_outliers, new_data, interval = "confidence", level = 0.95)
-confidence_interval
-
+calculated_density <- cities %>% filter(city == "houston", state_id == "TX") %>% select(density)
+predictions <- predict(model_new, data.frame(square_feet = c(1200), density = c(2*calculated_density)), interval = "confidence", level = 0.95)
+knitr::kable(exp(predictions))
 ```
+::: {.fragment .r-fit-text}
+ - Density metric was taken from the dataset
+   - Scaled to account for higher density
+:::
+:::
+:::
+:::
 
-The confidence interval changes significantly when comparing the model with outliers to the model without outliers. Taking into account Houston's population density (7000) and our desired square footage (2171), the price range is displayed below. However, note that the relatively low R-squared value indicates the model doesn't fully capture the variance in prices, meaning the actual prices could fall outside this range. This variability is to be expected.
+::: {.fragment}
+::: {.center style="text-align: center;"}
+[Good prediction!]{.bg style="--col: #D0E1F9"}
+:::
+:::
+
 
 ## Summary
+
+Talk about what ways we can improve the model in the future.
+
+# [Thank you]{.bg style="--col: #3929E9"} for listening!
