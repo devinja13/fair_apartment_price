@@ -4,7 +4,7 @@ subtitle: "Stat 410 Final Project"
 author: "Jack Dzialo, Devin Abraham, Tom Vincent"
 format:
   revealjs:
-    theme: ./_extensions/grantmcdermott/clean/clean.scss
+    theme: ./clean.scss
     transition: fade
 ---
 
@@ -36,9 +36,9 @@ TODO: CI of sample house around Rice
 ::: {.fragment}
 ::: {.callout-tip}
 ## Definitions
-1. **AIC - **
-2. **AICc - **
-3. **BIC - ** hello
+1. **AIC - **Measures trade off between model fit and complexity with a penalty for more complexity
+2. **AICc - **Corrected version of AIC with a larger penalty for regressors
+3. **BIC - ** Penalizes model complexity heavily and favors simple model with large sample sizes
 4. **PRESS - ** Predicted Residual Error Sum of Squares; predicts how accurate a model is at predicting data it hasn't seen before
 :::
 :::
@@ -47,7 +47,7 @@ TODO: CI of sample house around Rice
 
 ::: {.incremental}
 - Dataset of apartments for rent, sourced from [UCI dataset repository](https://archive.ics.uci.edu/dataset/555/apartment+for+rent+classified)
-- [100,000]{.bg style="--col: #D0E1F9"} rows, each representing a different apartment
+- [52,000]{.bg style="--col: #D0E1F9"} rows, each representing a different apartment
 - [22]{.bg style="--col: #D0E1F9"} columns, each representing a descriptor for an apartment listing
   - Square feet, apartment type, number of bathrooms, has photos
 :::
@@ -56,7 +56,7 @@ TODO: CI of sample house around Rice
 
 ::: {.column width="50%"}
 ```{r fig.width=8, fig.height=6}
-data <- read.csv2("~/Downloads/apartments.csv")
+data <- read.csv2("apartments.csv")
 data$price <- as.numeric(data$price)
 hist(data$price,
      freq = FALSE,
@@ -125,7 +125,7 @@ cleaned <- data %>%
               mutate(pets_allowed = ifelse(pets_allowed %in% c("Cats", "Dogs", "Cats, Dogs", "Cats, Dogs, None"), 1, 0)) %>%
               mutate(has_photo = ifelse(has_photo %in% c("Thumbnail", "Yes"), 1, 0)) %>%
               mutate(fee = ifelse(fee == "Yes", 1, 0))
-cities <- read.csv("~/Downloads/uscities.csv")
+cities <- read.csv("uscities.csv")
 cleaned <- cleaned %>%
   mutate(city = tolower(cityname), state = tolower(state))
 cities <- cities %>%
@@ -321,7 +321,7 @@ $$
 ::: {.columns}
 ::: {.column width="40%"}
 ::: {.center}
-Please put analysis of model here. Doesn't have to be long, just explain $R^2$ and P value.
+We can see that about 32% of the variation in price can be explained by variation due variation in the unit's square footage and the density of the city. In addition, the likelihood any of the coefficients true value is 0 is extremeley close to 0. 
 :::
 :::
 :::{.column width="60%"}
@@ -362,7 +362,8 @@ plot(model, which = 1)
 plot(model1, which = 1)
 
 ```
-The above plot shows some heteroscedasticity on the higher end of the fitted values, but it's not that much so it's okay. (Shows that model is less accurate for higher fitted values). Listings on either extreme end have some other factors? FIX
+The model shows randomly scattered errors for the most part. There are a few outliers points and the model decreases in accuracy for extreme fitted values. Since our model is not able to discern luxury apartments this may explain some of the large outliers.
+
 
 ## Residuals
 
@@ -373,7 +374,8 @@ plot(model, which = 2)
 plot(model1, which = 2)
 ```
 
-The Q-Q residual plot shows deviations at both extremes, indicating that our response variable is not normally distributed. This suggests that factors beyond our model may influence prices for listings that are either very inexpensive or highly expensive. For pricier listings, this may be attributable to luxury features, while for more affordable ones, underlying issues with the property could be to blame. (Add to different file and read off of there, this is too long to be on the slide) Use boxCox() to show that taking the log makes for a better model. Compare different models and show that log(price) model is better, better residuals. Maybe do another residual analysis.
+The Q-Q residual plot shows a normal distribution for the majority of the data. The plot has deviates from the normal distribution around the extremes meaning our plot struggles to predict very large rents, but for the vast majority of the data it follows a normal distribution. Again this could be due to luxury features that our data could not capture.
+
 
 ## Residuals
 
@@ -383,7 +385,10 @@ The Q-Q residual plot shows deviations at both extremes, indicating that our res
 plot(model, which = 3)
 plot(model1, which = 3)
 ```
-Distributed normally around the red line, which is good. It starts to go up for higher fitted values, indicating the same thing that the residuals vs. fitted values did (less accurate for higher values).
+
+The Scale Location plot is not ideal as the red line should be horizontal. The means homoscedacity is violated, but this is likely to higher variation in high fitted values. As prices become more expensive there are factors we can not account for especially with luxury apartments. 
+
+
 
 ## Residuals
 
@@ -393,7 +398,7 @@ Distributed normally around the red line, which is good. It starts to go up for 
 plot(model, which = 5)
 plot(model1, which = 5)
 ```
-There are some high leverage points that fall outside of the Cook distance, two of which we have seen before. These are points worth investigating. FIX
+The dotted lines show Cook's distance and just a few point are outside its bound meaning they are points of high leverage
 
 ## Adjusted Model
 
