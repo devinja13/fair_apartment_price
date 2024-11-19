@@ -56,7 +56,7 @@ TODO: CI of sample house around Rice
 
 ::: {.column width="50%"}
 ```{r fig.width=8, fig.height=6}
-data <- read.csv2("apartments.csv")
+data <- read.csv2("~/Downloads/apartments.csv")
 data$price <- as.numeric(data$price)
 hist(data$price,
      freq = FALSE,
@@ -125,7 +125,7 @@ cleaned <- data %>%
               mutate(pets_allowed = ifelse(pets_allowed %in% c("Cats", "Dogs", "Cats, Dogs", "Cats, Dogs, None"), 1, 0)) %>%
               mutate(has_photo = ifelse(has_photo %in% c("Thumbnail", "Yes"), 1, 0)) %>%
               mutate(fee = ifelse(fee == "Yes", 1, 0))
-cities <- read.csv("uscities.csv")
+cities <- read.csv("~/Downloads/uscities.csv")
 cleaned <- cleaned %>%
   mutate(city = tolower(cityname), state = tolower(state))
 cities <- cities %>%
@@ -303,7 +303,7 @@ After fitting the model with every predictor, we find that the [Population]{.bg 
 :::
 
 ::: {.fragment}
-Yet, when we compare this with the previous iteration we noticed that $R^2$ only increased .... FIX
+Yet, when we compare this with the previous iteration we noticed that $R^2$ increased, show that the model's accuracy improved. But the **AIC**, **AICc**, **BIC**, and **PRESS** changed by negligible amounts, meaning that the model is more complicated and may be overfitting the data.
 :::
 
 ## Forward Stepwise Search
@@ -373,7 +373,7 @@ plot(model, which = 2)
 plot(model1, which = 2)
 ```
 
-The Q-Q residual plot shows deviations at both extremes, indicating that our response variable is not normally distributed. This suggests that factors beyond our model may influence prices for listings that are either very inexpensive or highly expensive. For pricier listings, this may be attributable to luxury features, while for more affordable ones, underlying issues with the property could be to blame. (Add to different file and read off of there, this is too long to be on the slide) Use boxCox() to show that taking the log makes for a better model. Compare different models and show that log(price) model is better, better residuals. Maybe do anotehr residual analysis.
+The Q-Q residual plot shows deviations at both extremes, indicating that our response variable is not normally distributed. This suggests that factors beyond our model may influence prices for listings that are either very inexpensive or highly expensive. For pricier listings, this may be attributable to luxury features, while for more affordable ones, underlying issues with the property could be to blame. (Add to different file and read off of there, this is too long to be on the slide) Use boxCox() to show that taking the log makes for a better model. Compare different models and show that log(price) model is better, better residuals. Maybe do another residual analysis.
 
 ## Residuals
 
@@ -399,27 +399,71 @@ There are some high leverage points that fall outside of the Cook distance, two 
 
 ### Analyzing high leverage points
 
-Please remove oultlier points found in the previous plots (the numbered ones), and show new $R^2$. Points of interest are 20556, 18779, 6754, as they appear in multiple of the plots. Analyze and explain why they are bad.
+Please remove oultlier points found in the previous plots (the numbered ones), and show new $R^2$. 
+
+After removing the three outlier points, we see a big increase in our $R^2$ value. 
+
+```{r}
+
+old_r_squared <- summary(model)$r.squared  # Old R^2 value
+cat("Old R^2 value from the original model:", old_r_squared, "\n")
+
+# Fit the initial model
+model <- lm(price ~ square_feet + density, data = cleaned)
+cleaned_no_outliers <- cleaned[-c(8725, 9874, 9880), ]
+model_no_outliers <- lm(price ~ square_feet + density, data = cleaned_no_outliers)
+summary_no_outliers <- summary(model_no_outliers)
+cat("New R^2 value after removing outliers:", summary_no_outliers$r.squared, "\n")
+
+# Step 2: Calculate the hat values for all data points
+hat_values <- hatvalues(model)
+
+# Step 3: Extract the hat values for the three identified points
+leverage_points <- c(8725, 9874, 9880)
+leverage_values <- hat_values[leverage_points]
+n <- nrow(cleaned)
+p <- length(coefficients(model))
+leverage_threshold <- 2 * p / n
+
+cat("These are the leverage values: ", leverage_values, "\n")
+cat("This is the leverage Threshold: ", leverage_threshold)
+
+
+
+
+```
+
 
 ## Adjusted Model
 
 ### Model without high leverage
 
-## Adjusted Model
+The points we identified above are leverage points. Removing them reduced the discrepancy between the predicted values and the residuals, as demonstrated in the graph below. Overfitting is not a concern, as we verified that these outlier points were indeed leverage points before excluding them.
 
-### Adjust for normallity of residuals
+```{r}
+
+plot(model_no_outliers, which = 2)
+```
+
+
 
 ## Confidence Interval
 
 ### Find an actual listing around rice and apply model
 
 ```{r}
+
 predictions <- predict(model, data.frame(square_feet = c(2171), density = c(7000)), interval = "confidence", level = 0.95)
 predictions
 
 predictions <- predict(model1, data.frame(square_feet = c(2171), density = c(7000)), interval = "confidence", level = 0.95)
 exp(predictions)
+new_data <- data.frame(square_feet = 2171, density = 7000)
+confidence_interval <- predict(model_no_outliers, new_data, interval = "confidence", level = 0.95)
+confidence_interval
+
 ```
-Put into knitr kable, add listing image, explain how we chose density metric. I have no idea how it works. Lowkey just choose one that gives a value that is in the CI. It can fall outside of it i guess, just talk about low r squared and how it doesn't fully account for all of the variance.
+
+The confidence interval changes significantly when comparing the model with outliers to the model without outliers. Taking into account Houston's population density (7000) and our desired square footage (2171), the price range is displayed below. However, note that the relatively low R-squared value indicates the model doesn't fully capture the variance in prices, meaning the actual prices could fall outside this range. This variability is to be expected.
 
 ## Summary
