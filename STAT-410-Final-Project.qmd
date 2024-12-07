@@ -32,7 +32,7 @@ How to determine if price is fair?
 Dataset of apartments for rent, sourced from UCI dataset repository (https://archive.ics.uci.edu/dataset/555/apartment+for+rent+classified)52,000 rows, each representing a different apartment
 22 columns, each representing a descriptor for an apartment listing Square feet, apartment type, number of bathrooms, has photos
 
-```{r fig.width=8, fig.height=6}
+```{r fig.width=8, fig.height=6, echo=FALSE}
 data <- read.csv2("~/Downloads/apartments.csv")
 data$price <- as.numeric(data$price)
 hist(data$price,
@@ -44,14 +44,47 @@ hist(data$price,
      xlim = c(0, 10000))
 ```
 
-
-```{r}
+##  Data Synopsis for All Variables
+```{r data, echo=FALSE}
 table <- data.frame(
-  Statistic = c("Mean", "Max", "Min", "Median"),
+  Statistic = c("Mean Price", "Max Price", "Min Price", "Median Price"),
   Value = c(round(mean(data$price, na.rm = TRUE)),
             round(max(data$price, na.rm = TRUE)),
             round(min(data$price, na.rm = TRUE)),
             round(median(data$price, na.rm = TRUE))
+))
+knitr::kable(table)
+
+data$square_feet <- as.numeric(data$square_feet)
+
+table <- data.frame(
+  Statistic = c("Mean Square Feet", "Max Square Feet", "Min Square Feet", "Median Square Feet"),
+  Value = c(round(mean(data$square_feet, na.rm = TRUE)),
+            round(max(data$square_feet, na.rm = TRUE)),
+            round(min(data$square_feet, na.rm = TRUE)),
+            round(median(data$square_feet, na.rm = TRUE))
+))
+knitr::kable(table)
+
+data$bedrooms <- as.numeric(data$bedrooms)
+
+table <- data.frame(
+  Statistic = c( "Max Bedrooms", "Min Bedrooms"),
+  Value = c(
+            max(data$bedrooms, na.rm = TRUE),
+            min(data$bedrooms, na.rm = TRUE)
+))
+knitr::kable(table)
+
+data$bathrooms <- as.numeric(data$bathrooms)
+
+
+table <- data.frame(
+  Statistic = c("Max Bathrooms", "Min Bathrooms"),
+  Value = c(
+            max(data$bathrooms, na.rm = TRUE),
+            min(data$bathrooms, na.rm = TRUE)
+            
 ))
 knitr::kable(table)
 ```
@@ -74,9 +107,9 @@ $$
 Y = \beta_0
 $$
 
-After fitting the basic model with every predictor, we find that the [Square Feet]{.bg style="--col: #D0E1F9"} variable results in the lowest P value of the model.
+After fitting the basic model with every predictor, we find that the Square feet variable results in the lowest P value of the model.
 
-```{r}
+```{r, echo=FALSE}
 library(ggplot2)
 library(data.table)
 library(dplyr)
@@ -422,3 +455,100 @@ Limitations
 -   Since Forward Step Wise Search is a greedy algorithm so it makes the best choice at each step and does not guarentee the most optimal solution
 -   In the future we would like a data set with more regressors, our group hypothesizes that a regressor that represents the apartments luxuriousness would have a significant impact
     -   Could also use interaction terms to account for nonlinear effects
+
+
+
+##Appendix
+
+#Histogram
+
+```{r fig.width=8, fig.height=6 }
+data <- read.csv2("~/Downloads/apartments.csv")
+data$price <- as.numeric(data$price)
+```
+
+
+## Function to determine which variable has the lowest P-Value
+
+```{r}
+cleaned <- data %>%
+              filter(currency == "USD", price_type == "Monthly", nchar(state) == 2, bathrooms != "null", !bedrooms %in% c("null", "USD", "") ) %>%
+              mutate(pets_allowed = ifelse(pets_allowed %in% c("Cats", "Dogs", "Cats, Dogs", "Cats, Dogs, None"), 1, 0)) %>%
+              mutate(has_photo = ifelse(has_photo %in% c("Thumbnail", "Yes"), 1, 0)) %>%
+              mutate(fee = ifelse(fee == "Yes", 1, 0))
+cities <- read.csv("~/Downloads/uscities.csv")
+cleaned <- cleaned %>%
+  mutate(city = tolower(cityname), state = tolower(state))
+cities <- cities %>%
+  mutate(city = tolower(city), state = tolower(state_id))
+cleaned <- cleaned %>%
+  mutate(city = trimws(city), state = trimws(state))
+cities <- cities %>%
+  mutate(city = trimws(city), state = trimws(state))
+data <- cleaned %>%
+  left_join(cities %>% select(city, state, population, density),
+            by = c("city", "state"))
+#can do either median or mean.
+pop_mean <- (mean(cities$population, na.rm=TRUE))
+density_med <- mean(cities$density, na.rm=TRUE)
+cleaned <- mutate(data, population = ifelse(is.na(population), pop_mean, population), density = ifelse(is.na(density), density_med, density))
+Y <- cleaned$price
+cleaned$bathrooms <- as.numeric(cleaned$bathrooms)
+cleaned$bedrooms <- as.numeric(cleaned$bedrooms)
+cleaned$price <- as.numeric(cleaned$price)
+cleaned$density <- as.numeric(cleaned$density)
+cleaned$population <- as.numeric(cleaned$population)
+cleaned$square_feet <- as.numeric(cleaned$square_feet)
+regression <- function(regressors, add_col = NULL) {
+  low_pval <- 10
+  best_var <- NULL
+  adj_r2 <- 0
+  best_var_sum <- NULL
+  high_t_val <- 0
+  AIC <- NULL
+  AICc <- NULL
+  BIC <- NULL
+  # Iterate through the regressors
+  for (i in regressors) {
+    # Dynamically create the formula
+    if (is.null(add_col) || length(add_col) == 0) {
+      formula <- reformulate(i, response = "price")
+    } else {
+      formula <- reformulate(c(add_col, i), response = "price")
+    }
+    # Fit the linear model
+    model <- invisible(lm(formula, data = cleaned))
+    sum <- summary(model)
+    # Extract the p-value for the slope (the last row of coefficients)
+    # Ensure the slope term exists
+    if (nrow(sum$coefficients) > 1) {
+      pvalue <- sum$coefficients[nrow(sum$coefficients), "Pr(>|t|)"]
+      tvalue <- abs(sum$coefficients[nrow(sum$coefficients), "t value"])
+      # Update the lowest p-value and corresponding variable
+      if (tvalue > high_t_val) {
+        low_pval <- pvalue
+        best_var <- i
+        adj_r2 <- sum$adj.r.squared
+        best_var_sum <- sum
+        high_t_val <- tvalue
+        AIC <- extractAIC(model, k=2)[2]
+        npar <- length(sum$coefficients) + 1;
+        n <- length(sum$residuals)
+        AICc <- AIC + 2*npar*(npar + 1) / (n - npar - 1)
+        BIC <- extractAIC(model, k = log(n))[2]
+  residuals <- residuals(model)
+  leverage <- hatvalues(model)
+  press_statistic <- sum((residuals / (1 - leverage))^2)
+      }
+    }
+  }
+  # Return the variable with the lowest p-value
+  return(c(best_var, low_pval, adj_r2, AIC, AICc, BIC, press_statistic))
+}
+```
+
+
+
+
+
+
