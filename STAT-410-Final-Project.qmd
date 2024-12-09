@@ -163,7 +163,6 @@ knitr::kable(table)
 ```
 
 
-
 # Data Analysis - Model Building
 
 ## Forward Stepwise Search
@@ -181,6 +180,12 @@ run forward stepwise search that inputs the potential variables to be included a
 the variables already in the model.
 
 ```{r, echo=FALSE}
+
+regressors <- c("bedrooms", "bathrooms", "fee", "has_photo",
+                    "pets_allowed",
+                    "population")
+add_col <- c("density", "square_feet")
+i <- 2
 
 regression <- function(regressors, add_col = NULL) {
   low_pval <- 10
@@ -217,7 +222,7 @@ regression <- function(regressors, add_col = NULL) {
         AIC <- extractAIC(model, k=2)[2]
         npar <- length(sum$coefficients) + 1;
         n <- length(sum$residuals)
-        AICc <- AIC + 2*npar*(npar + 1) / (n - npar - 1)
+        AICc <- AIC + (2*npar*(npar + 1) / (n - npar - 1))
         BIC <- extractAIC(model, k = log(n))[2]
   residuals <- residuals(model)
   leverage <- hatvalues(model)
@@ -248,65 +253,29 @@ Y = \beta_0 + X_1\beta_1
 $$
 
 After fitting the model with every predictor, we find that the Density variable results in the lowest P value of the model.
-
 ```{r, echo=FALSE}
 
-regression <- function(regressors, add_col = NULL) {
-  low_pval <- 10
-  best_var <- NULL
-  adj_r2 <- 0
-  best_var_sum <- NULL
-  high_t_val <- 0
-  AIC <- NULL
-  AICc <- NULL
-  BIC <- NULL
-  # Iterate through the regressors
-  for (i in regressors) {
-    # Dynamically create the formula
-    if (is.null(add_col) || length(add_col) == 0) {
-      formula <- reformulate(i, response = "price")
-    } else {
-      formula <- reformulate(c(add_col, i), response = "price")
-    }
-    # Fit the linear model
-    model <- invisible(lm(formula, data = cleaned))
-    sum <- summary(model)
-    # Extract the p-value for the slope (the last row of coefficients)
-    # Ensure the slope term exists
-    if (nrow(sum$coefficients) > 1) {
-      pvalue <- sum$coefficients[nrow(sum$coefficients), "Pr(>|t|)"]
-      tvalue <- abs(sum$coefficients[nrow(sum$coefficients), "t value"])
-      # Update the lowest p-value and corresponding variable
-      if (tvalue > high_t_val) {
-        low_pval <- pvalue
-        best_var <- i
-        adj_r2 <- sum$adj.r.squared
-        best_var_sum <- sum
-        high_t_val <- tvalue
-        AIC <- extractAIC(model, k=2)[2]
-        npar <- length(sum$coefficients) + 1;
-        n <- length(sum$residuals)
-        AICc <- AIC + 2*npar*(npar + 1) / (n - npar - 1)
-        BIC <- extractAIC(model, k = log(n))[2]
-  residuals <- residuals(model)
-  leverage <- hatvalues(model)
-  press_statistic <- sum((residuals / (1 - leverage))^2)
-      }
-    }
-  }
-  # Return the variable with the lowest p-value
-  return(c(best_var, low_pval, round(adj_r2, 3), round(AIC), round(AICc), round(BIC), round(press_statistic)))
-}
-
-regressor_list <- c("bedrooms", "bathrooms", "has_photo",
-                    "pets_allowed",
+regressor_list <- c("bedrooms", "bathrooms", "fee", "has_photo","pets_allowed",
                     "population", "density")
-always_include <- c("square_feet")
+new1 <- regression(regressor_list, "square_feet")
 
-new <- regression(regressor_list, always_include)
-table <- data.frame(
-  Statistic = c("Predictor", "P-Value", "Adjusted R Squared", "AIC", "AICc", "BIC", "PRESS"), Values = new)
+new_sub <- c(NA, NA, as.numeric(new[3:7]))
+new1_sub <- c(NA, NA, as.numeric(new1[3:7]))
+diff <- round(c(new_sub - new1_sub), 3)
+
+mat <- matrix(data=c(new, new1, diff), nrow=3, byrow=TRUE, )
+
+colnames(mat) <- c("Predictor", "P-Value", "Adjusted R Squared", "AIC", "AICc", "BIC", "PRESS")
+
+
+rownames(mat) <- c("First Iteration", "Second Iteration", "Difference")
+
+table <- as.data.frame(mat)
+
 knitr::kable(table)
+
+
+
 ```
 
 
@@ -316,31 +285,201 @@ knitr::kable(table)
 
 The model improved when including density, while $AIC, AICc, BIC, PRESS$ got smaller.
 
-
-
 $Model:$
 
 $$
 Y = \beta_0 + X_1\beta_1 + X_2\beta_2
 $$
 
-After fitting the model with every predictor, we find that the Population variable results in the lowest P value of the model.
+```{r, echo=FALSE}
 
-## Forward Stepwise Search
+regressor_list <- c("bedrooms", "bathrooms", "fee", "has_photo", "pets_allowed", "population")
+new2 <- regression(regressor_list, c("square_feet", "density"))
+new1_sub <- c(NA, NA, as.numeric(new1[3:7]))
+new2_sub <- c(NA, NA, as.numeric(new2[3:7]))
+diff <- round(c(new1_sub - new2_sub), 3)
+
+mat <- matrix(data=c(new1, new2, diff), nrow=3, byrow=TRUE, )
+
+colnames(mat) <- c("Predictor", "P-Value", "Adjusted R Squared", "AIC", "AICc", "BIC", "PRESS")
+
+
+rownames(mat) <- c("First Iteration", "Second Iteration", "Difference")
+
+table <- as.data.frame(mat)
+
+knitr::kable(table)
+
+```
 
 ### Third Iteration
 
+The model improved when including population, while $AIC, AICc, BIC, PRESS$ got smaller.
 
+$Model:$
+
+$$
+Y = \beta_0 + X_1\beta_1 + X_2\beta_2 + X_3\beta_3
+$$
+
+```{r, echo=FALSE}
+
+regressor_list <- c("bedrooms", "bathrooms", "fee", "has_photo", "pets_allowed")
+new3 <- regression(regressor_list, c("square_feet", "density", "population"))
+new2_sub <- c(NA, NA, as.numeric(new2[3:7]))
+new3_sub <- c(NA, NA, as.numeric(new3[3:7]))
+diff <- round(c(new2_sub - new3_sub), 3)
+
+mat <- matrix(data=c(new2, new3, diff), nrow=3, byrow=TRUE, )
+
+colnames(mat) <- c("Predictor", "P-Value", "Adjusted R Squared", "AIC", "AICc", "BIC", "PRESS")
+
+
+rownames(mat) <- c("First Iteration", "Second Iteration", "Difference")
+
+table <- as.data.frame(mat)
+
+knitr::kable(table)
+
+```
+
+### Fourth Iteration
+
+The model improved when including bathrooms, while $AIC, AICc, BIC, PRESS$ got smaller.
+
+$Model:$
+
+$$
+Y = \beta_0 + X_1\beta_1 + X_2\beta_2 + X_3\beta_3 + X_4\beta_4
+$$
+
+```{r, echo=FALSE}
+
+regressor_list <- c("bedrooms", "fee", "has_photo", "pets_allowed")
+new4 <- regression(regressor_list, c("bathrooms","square_feet", "density", "population"))
+new3_sub <- c(NA, NA, as.numeric(new3[3:7]))
+new4_sub <- c(NA, NA, as.numeric(new4[3:7]))
+diff <- round(c(new3_sub - new4_sub), 3)
+
+mat <- matrix(data=c(new3, new4, diff), nrow=3, byrow=TRUE, )
+
+colnames(mat) <- c("Predictor", "P-Value", "Adjusted R Squared", "AIC", "AICc", "BIC", "PRESS")
+
+
+rownames(mat) <- c("First Iteration", "Second Iteration", "Difference")
+
+table <- as.data.frame(mat)
+
+knitr::kable(table)
+
+```
+### Fifth Iteration
+
+The model improved when including bedrooms, while $AIC, AICc, BIC, PRESS$ got smaller.
+
+$Model:$
+
+$$
+Y = \beta_0 + X_1\beta_1 + X_2\beta_2 + X_3\beta_3 + X_4\beta_4 + X_5\beta_5
+$$
+
+```{r, echo=FALSE}
+
+regressor_list <- c( "fee", "has_photo", "pets_allowed")
+new5 <- regression(regressor_list, c("bedrooms","bathrooms","square_feet", "density", "population"))
+new4_sub <- c(NA, NA, as.numeric(new4[3:7]))
+new5_sub <- c(NA, NA, as.numeric(new5[3:7]))
+diff <- round(c(new4_sub - new5_sub), 3)
+
+mat <- matrix(data=c(new4, new5, diff), nrow=3, byrow=TRUE, )
+
+colnames(mat) <- c("Predictor", "P-Value", "Adjusted R Squared", "AIC", "AICc", "BIC", "PRESS")
+
+
+rownames(mat) <- c("First Iteration", "Second Iteration", "Difference")
+
+table <- as.data.frame(mat)
+
+knitr::kable(table)
+
+```
+
+### Sixth Iteration
+
+The model improved when including has_photo, while $AIC, AICc, BIC, PRESS$ got smaller.
+
+$Model:$
+
+$$
+Y = \beta_0 + X_1\beta_1 + X_2\beta_2 + X_3\beta_3 + X_4\beta_4 + X_5\beta_5 + X_6\beta_6
+$$
+
+```{r, echo=FALSE}
+
+regressor_list <- c( "fee", "pets_allowed")
+new6 <- regression(regressor_list, c("has_photo","bedrooms","bathrooms","square_feet", "density", "population"))
+new6_sub <- c(NA, NA, as.numeric(new6[3:7]))
+new7_sub <- c(NA, NA, as.numeric(new7[3:7]))
+diff <- round(c(new6_sub - new7_sub), 3)
+
+mat <- matrix(data=c(new6, new7, diff), nrow=3, byrow=TRUE, )
+
+colnames(mat) <- c("Predictor", "P-Value", "Adjusted R Squared", "AIC", "AICc", "BIC", "PRESS")
+
+
+rownames(mat) <- c("Sixth Iteration", "Seveneth Iteration", "Difference")
+
+table <- as.data.frame(mat)
+
+knitr::kable(table)
+
+```
+
+### Seventh Iteration
+
+The model improved when including pets_allowed, while $AIC, AICc, BIC, PRESS$ got smaller.
+
+$Model:$
+
+$$
+Y = \beta_0 + X_1\beta_1 + X_2\beta_2 + X_3\beta_3 + X_4\beta_4 + X_5\beta_5 + X_6\beta_6 + X_7\beta_7
+$$
+
+```{r, echo=FALSE}
+
+regressor_list <- c( "fee")
+new7 <- regression(regressor_list, c("has_photo","bedrooms","bathrooms","square_feet", "density", "population", "pets_allowed"))
+new7_sub <- c(NA, NA, as.numeric(new7[3:7]))
+new8_sub <- c(NA, NA, as.numeric(new8[3:7]))
+diff <- round(c(ne7_sub - new8_sub), 3)
+
+mat <- matrix(data=c(new7, new8, diff), nrow=3, byrow=TRUE, )
+
+colnames(mat) <- c("Predictor", "P-Value", "Adjusted R Squared", "AIC", "AICc", "BIC", "PRESS")
+
+
+rownames(mat) <- c("Seventh Iteration", "Eight Iteration", "Difference")
+
+table <- as.data.frame(mat)
+
+knitr::kable(table)
+
+```
 ## Forward Stepwise Search
 
 ### Completed
 
 
-Hence, we have found our linear model, with the predictor variables being Square feet ($X_1$), and denstiy ($X_2$).
+Hence, we have found our linear model since the previous iteration did not improve the model, with the predictor variables being Square feet ($X_1$), and denstiy ($X_2$).
 
 $$
 Y=\beta_0 + X_1\beta_1 + X_2\beta_2
 $$
+
+
+After fitting the model with every predictor, we find that the Population variable results in the lowest P value of the model.
+
+
 
 $32\%$ of the variation in price explained by model
 
