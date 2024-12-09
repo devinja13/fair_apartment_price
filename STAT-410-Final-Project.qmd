@@ -181,12 +181,6 @@ the variables already in the model.
 
 ```{r, echo=FALSE}
 
-regressors <- c("bedrooms", "bathrooms", "fee", "has_photo",
-                    "pets_allowed",
-                    "population")
-add_col <- c("density", "square_feet")
-i <- 2
-
 regression <- function(regressors, add_col = NULL) {
   low_pval <- 10
   best_var <- NULL
@@ -231,7 +225,7 @@ regression <- function(regressors, add_col = NULL) {
     }
   }
   # Return the variable with the lowest p-value
-  return(c(best_var, low_pval, round(adj_r2, 3), round(AIC), round(AICc), round(BIC), round(press_statistic)))
+  return(c(best_var, round(low_pval, 4), round(adj_r2, 4), round(AIC), round(AICc), round(BIC), round(press_statistic)))
 }
 regressor_list <- c("bedrooms", "bathrooms", "fee", "has_photo",
                     "pets_allowed", "square_feet",
@@ -447,13 +441,13 @@ $$
 
 ```{r, echo=FALSE}
 
-regressor_list <- c( "fee")
+regressor_list <- c("fee")
 new7 <- regression(regressor_list, c("has_photo","bedrooms","bathrooms","square_feet", "density", "population", "pets_allowed"))
 new6_sub <- c(NA, NA, as.numeric(new6[3:7]))
 new7_sub <- c(NA, NA, as.numeric(new7[3:7]))
 diff <- round(c(new6_sub - new7_sub), 3)
 
-mat <- matrix(data=c(round(new6, 3), round(new7, 3), diff), nrow=3, byrow=TRUE, )
+mat <- matrix(data=c(new6, new7, diff), nrow=3, byrow=TRUE, )
 
 colnames(mat) <- c("Predictor", "P-Value", "Adjusted R Squared", "AIC", "AICc", "BIC", "PRESS")
 
@@ -485,10 +479,12 @@ $32\%$ of the variation in price explained by model
 
 
 ```{r, echo=FALSE}
+
+library(car)
 cleaned$price1 <- log(cleaned$price)
 
 # Update the model to include all specified regressors
-model <- lm(price ~ square_feet + density + population + bathrooms + bedrooms + has_photo + pets_allowed, data=cleaned)
+model <- lm(price ~ square_feet + density + log(population) + bathrooms + bedrooms + has_photo + pets_allowed, data=cleaned)
 
 # Summarize the model
 summary_model <- summary(model)
@@ -542,7 +538,7 @@ knitr::kable(table, caption = "Summary of Model")
 ### Residuals vs. Fitted Values
 
 ```{r, echo=FALSE}
-model <- lm(price ~ square_feet + density, data=cleaned)
+model <- lm(price ~ square_feet + density + log(population) + bathrooms + bedrooms + has_photo + pets_allowed, data=cleaned)
 plot(model, which = 1)
 ```
 
