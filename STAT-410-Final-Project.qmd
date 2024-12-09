@@ -418,7 +418,7 @@ $$
 
 regressor_list <- c( "fee", "pets_allowed")
 new6 <- regression(regressor_list, c("has_photo","bedrooms","bathrooms","square_feet", "density", "population"))
-new5_sub <- c(NA, NA, as.numeric(new6[3:7]))
+new5_sub <- c(NA, NA, as.numeric(new5[3:7]))
 new6_sub <- c(NA, NA, as.numeric(new6[3:7]))
 diff <- round(c(new5_sub - new6_sub), 3)
 
@@ -453,7 +453,7 @@ new6_sub <- c(NA, NA, as.numeric(new6[3:7]))
 new7_sub <- c(NA, NA, as.numeric(new7[3:7]))
 diff <- round(c(new6_sub - new7_sub), 3)
 
-mat <- matrix(data=c(new6, new7, diff), nrow=3, byrow=TRUE, )
+mat <- matrix(data=c(round(new6, 3), round(new7, 3), diff), nrow=3, byrow=TRUE, )
 
 colnames(mat) <- c("Predictor", "P-Value", "Adjusted R Squared", "AIC", "AICc", "BIC", "PRESS")
 
@@ -483,18 +483,55 @@ After fitting the model with every predictor, we find that the Population variab
 
 $32\%$ of the variation in price explained by model
 
+
 ```{r, echo=FALSE}
 cleaned$price1 <- log(cleaned$price)
-model <- lm(price ~ square_feet + density, data=cleaned)
+
+# Update the model to include all specified regressors
+model <- lm(price ~ square_feet + density + population + bathrooms + bedrooms + has_photo + pets_allowed, data=cleaned)
+
+# Summarize the model
 summary_model <- summary(model)
+
+# Update the table to include all regressors
 table <- data.frame(
-  Statistic = c("Intercept", "Square Feet", "Density"),
-  Values = c(round(summary_model$coefficients[1,1], 4),round(summary_model$coefficients[2,1], 4),round(summary_model$coefficients[3,1], 4)),
-  SE = c(round(summary_model$coefficients[1,2],4),round(summary_model$coefficients[2,2], 4),round(summary_model$coefficients[3,2],4)),
-  P_Value = c(summary_model$coefficients[1,4],summary_model$coefficients[2,4],summary_model$coefficients[3,4]),
-  R_Squared = c(round(summary_model$r.squared,4), "", "")
+  Statistic = c("Intercept", "Square Feet", "Density", "Population", "Bathrooms", "Bedrooms", "Has Photo", "Pets Allowed"),
+  Values = c(
+    round(summary_model$coefficients[1, 1], 4), 
+    round(summary_model$coefficients[2, 1], 4), 
+    round(summary_model$coefficients[3, 1], 4), 
+    round(summary_model$coefficients[4, 1], 4), 
+    round(summary_model$coefficients[5, 1], 4), 
+    round(summary_model$coefficients[6, 1], 4), 
+    round(summary_model$coefficients[7, 1], 4), 
+    round(summary_model$coefficients[8, 1], 4)
+  ),
+  SE = c(
+    round(summary_model$coefficients[1, 2], 4), 
+    round(summary_model$coefficients[2, 2], 4), 
+    round(summary_model$coefficients[3, 2], 4), 
+    round(summary_model$coefficients[4, 2], 4), 
+    round(summary_model$coefficients[5, 2], 4), 
+    round(summary_model$coefficients[6, 2], 4), 
+    round(summary_model$coefficients[7, 2], 4), 
+    round(summary_model$coefficients[8, 2], 4)
+  ),
+  P_Value = c(
+    summary_model$coefficients[1, 4], 
+    summary_model$coefficients[2, 4], 
+    summary_model$coefficients[3, 4], 
+    summary_model$coefficients[4, 4], 
+    summary_model$coefficients[5, 4], 
+    summary_model$coefficients[6, 4], 
+    summary_model$coefficients[7, 4], 
+    summary_model$coefficients[8, 4]
+  ),
+  R_Squared = c(round(summary_model$r.squared, 4), "", "", "", "", "", "", "")
 )
-  knitr::kable(table, caption = "Summary of Model")
+
+# Create the table
+knitr::kable(table, caption = "Summary of Model")
+
 ```
 
 
