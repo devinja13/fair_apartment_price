@@ -29,13 +29,13 @@ cleaned <- cleaned %>%
   mutate(city = trimws(city), state = trimws(state))
 cities <- cities %>%
   mutate(city = trimws(city), state = trimws(state))
-data <- cleaned %>%
+cleaned <- cleaned %>%
   left_join(cities %>% select(city, state, population, density),
             by = c("city", "state"))
 #can do either median or mean.
 pop_mean <- (mean(cities$population, na.rm=TRUE))
 density_med <- mean(cities$density, na.rm=TRUE)
-cleaned <- mutate(data, population = ifelse(is.na(population), pop_mean, population), density = ifelse(is.na(density), density_med, density))
+cleaned <- mutate(cleaned, population = ifelse(is.na(population), pop_mean, population), density = ifelse(is.na(density), density_med, density))
 Y <- cleaned$price
 cleaned$bathrooms <- as.numeric(cleaned$bathrooms)
 cleaned$bedrooms <- as.numeric(cleaned$bedrooms)
@@ -418,11 +418,11 @@ $$
 
 regressor_list <- c( "fee", "pets_allowed")
 new6 <- regression(regressor_list, c("has_photo","bedrooms","bathrooms","square_feet", "density", "population"))
+new5_sub <- c(NA, NA, as.numeric(new6[3:7]))
 new6_sub <- c(NA, NA, as.numeric(new6[3:7]))
-new7_sub <- c(NA, NA, as.numeric(new7[3:7]))
-diff <- round(c(new6_sub - new7_sub), 3)
+diff <- round(c(new5_sub - new6_sub), 3)
 
-mat <- matrix(data=c(new6, new7, diff), nrow=3, byrow=TRUE, )
+mat <- matrix(data=c(new5, new6, diff), nrow=3, byrow=TRUE, )
 
 colnames(mat) <- c("Predictor", "P-Value", "Adjusted R Squared", "AIC", "AICc", "BIC", "PRESS")
 
@@ -449,11 +449,11 @@ $$
 
 regressor_list <- c( "fee")
 new7 <- regression(regressor_list, c("has_photo","bedrooms","bathrooms","square_feet", "density", "population", "pets_allowed"))
+new6_sub <- c(NA, NA, as.numeric(new6[3:7]))
 new7_sub <- c(NA, NA, as.numeric(new7[3:7]))
-new8_sub <- c(NA, NA, as.numeric(new8[3:7]))
-diff <- round(c(ne7_sub - new8_sub), 3)
+diff <- round(c(new6_sub - new7_sub), 3)
 
-mat <- matrix(data=c(new7, new8, diff), nrow=3, byrow=TRUE, )
+mat <- matrix(data=c(new6, new7, diff), nrow=3, byrow=TRUE, )
 
 colnames(mat) <- c("Predictor", "P-Value", "Adjusted R Squared", "AIC", "AICc", "BIC", "PRESS")
 
