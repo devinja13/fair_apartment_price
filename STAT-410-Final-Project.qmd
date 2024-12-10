@@ -13,6 +13,8 @@ library(stringr)
 library(car)
 library(knitr)
 library(gridExtra)
+library(gridGraphics)
+library(ggfortify)
 ```
 
 ```{r, echo=FALSE, include=FALSE}
@@ -45,11 +47,16 @@ cleaned$price <- as.numeric(cleaned$price)
 cleaned$density <- as.numeric(cleaned$density)
 cleaned$population <- as.numeric(cleaned$population)
 cleaned$square_feet <- as.numeric(cleaned$square_feet)
+data$price <- as.numeric(data$price)
+data$square_feet <- as.numeric(data$square_feet)
+cleaned$bedrooms <- as.numeric(cleaned$bedrooms)
+cleaned$bathrooms <- as.numeric(cleaned$bathrooms)
+cleaned$population = cleaned$population / 1000
 ```
 
 ## Purpose
 
-When coming up with ideas for our final project, we wanted to work on something that related to a real problem that we had in our lives. Our whole group is looking for housing next year, both near Rice and out of Houston. Two of us are looking for larger houses to share with roommates, while one is looking for a one 1-2 bedroom apartment in a different city. Since we are all facing the same problem, but are looking at many different housing factors we wanted to come up with a model to ensure we are getting a fair price for the given housing option, or even find below-market opportunities allowing us to get a great deal. Since there are so many houses on the market all with different qualities, it is difficult to determine a fair price. 
+When coming up with ideas for our final project, we wanted to work on something that related to a real problem that we had in our lives. Our whole group is looking for housing next year, both near Rice and out of Houston. Two of us are looking for larger houses to share with roommates, while one is looking for a one 1-2 bedroom apartment in a different city. Since we are all facing the same problem, but are looking at many different housing factors we wanted to come up with a model to ensure we are getting a fair price for the given housing option, or even find below-market opportunities allowing us to get a great deal. Since there are so many houses on the market all with different qualities, it is difficult to determine a fair price.
 
 Therefore, for our final project, we aim to address the problem of accurately predicting apartment prices based on a variety of influencing factors. Our primary goal is to develop a reliable regression model that can assess the fairness of rental prices, providing a valuable tool for prospective renters to make informed decisions. The effects of variables such as location, size, amenities, and neighborhood characteristics on rental costs are of particular interest, as understanding these can aid in identifying key drivers of price variations. By achieving these objectives, we hope to contribute to a more transparent rental market.
 
@@ -62,12 +69,11 @@ Therefore, for our final project, we aim to address the problem of accurately pr
 4.  $PRESS$: Predicted Residual Error Sum of Squares; predicts how accurate a model is at predicting data it hasn't seen before
 
 ## Data Collection
-We got our data from the UC Irvine Machine Learning repository titled Apartment for Rent. In addition, we supplemented this dataset with a US cities dataset from Simple Maps so we could include the population and density of the city the apartment is located in. The Apartment for Rent dataset included 22 variables and 52,746 oberservations. The 22 variables included id, category, title, body, amenities, bathrooms, bedrooms, currency, fee, has_photo, pets_allowed, price, price_display, price_type, square_feet, address, cityname, state, latitude, longitude, source, time. After exploring the data, we found columns with just text such as Title, Body, and Address which we were not able to turn into quantitative data or factors so we decided to not include it in the model. In addition, we did not include the following columns since they were not directly related to the housing. We removed id, category, currency, price_type, state, latitude, longitude, and time. To include the population and density of the city, were able to merge the datasets including the population and density for the listed city in each row. There were a range of responses for pets_allowed, has_fee, and has_photo but we were able to convert them into binary indicator variables 1 for yes, 0 for no. 
+We got our data from the UC Irvine Machine Learning repository titled Apartment for Rent. In addition, we supplemented this dataset with a US cities dataset from Simple Maps so we could include the population and density of the city the apartment is located in. The Apartment for Rent dataset included 22 variables and 52,746 oberservations. The 22 variables included id, category, title, body, amenities, bathrooms, bedrooms, currency, fee, has_photo, pets_allowed, price, price_display, price_type, square_feet, address, cityname, state, latitude, longitude, source, time. After exploring the data, we found columns with just text such as Title, Body, and Address which we were not able to turn into quantitative data or factors so we decided to not include it in the model. In addition, we did not include the following columns since they were not directly related to the housing. We removed id, category, currency, price_type, state, latitude, longitude, and time. To include the population and density of the city, were able to merge the datasets including the population and density for the listed city in each row. There were a range of responses for pets_allowed, has_fee, and has_photo but we were able to convert them into binary indicator variables 1 for yes, 0 for no.
 
 
 ```{r, fig.width=8, fig.height=6, echo=FALSE}
 
-data$price <- as.numeric(data$price)
 hist(data$price,
      freq = FALSE,
      breaks = "scott",
@@ -87,7 +93,6 @@ table1 <- data.frame(
             round(median(cleaned$price, na.rm = TRUE))
 ))
 
-data$square_feet <- as.numeric(data$square_feet)
 
 table2 <- data.frame(
   Statistic = c("Mean Square Feet", "Max Square Feet", "Min Square Feet", "Median Square Feet"),
@@ -97,7 +102,6 @@ table2 <- data.frame(
             round(median(cleaned$square_feet, na.rm = TRUE))
 ))
 
-cleaned$bedrooms <- as.numeric(cleaned$bedrooms)
 
 table3 <- data.frame(
   Statistic = c("Mean Bedrooms", "Max Bedrooms", "Min Bedrooms", "Median Bedrooms"),
@@ -107,7 +111,6 @@ table3 <- data.frame(
             median(cleaned$bedrooms, na.rm=TRUE)
 ))
 
-cleaned$bathrooms <- as.numeric(cleaned$bathrooms)
 
 
 table4 <- data.frame(
@@ -116,7 +119,7 @@ table4 <- data.frame(
             max(cleaned$bathrooms, na.rm = TRUE),
             min(cleaned$bathrooms, na.rm = TRUE),
             median(cleaned$bathrooms, na.rm=TRUE)
-            
+
 ))
 
 table5 <- data.frame(
@@ -125,7 +128,7 @@ table5 <- data.frame(
             max(cleaned$population, na.rm = TRUE),
             min(cleaned$population, na.rm = TRUE),
             median(cleaned$population, na.rm=TRUE)
-            
+
 ))
 
 table6 <- data.frame(
@@ -134,7 +137,7 @@ table6 <- data.frame(
             max(cleaned$density, na.rm = TRUE),
             min(cleaned$density, na.rm = TRUE),
             median(cleaned$density, na.rm=TRUE)
-            
+
 ))
 
 table7 <- data.frame(
@@ -143,7 +146,7 @@ table7 <- data.frame(
             max(cleaned$density, na.rm = TRUE),
             min(cleaned$density, na.rm = TRUE),
             median(cleaned$density, na.rm=TRUE)
-            
+
 ))
 
 table8 <- data.frame(
@@ -191,7 +194,6 @@ run forward stepwise search that inputs the potential variables to be included a
 the variables already in the model.
 
 ```{r, echo=FALSE}
-
 regression <- function(regressors, add_col = NULL) {
   low_pval <- 10
   best_var <- NULL
@@ -316,9 +318,10 @@ knitr::kable(table)
 
 ### Third Iteration
 
-The model improved when including population, while $AIC, AICc, BIC, PRESS$ got smaller.
+The model improved when including population, while $AIC, AICc, BIC, PRESS$ got smaller. We also decided to divide population by 1000, as the values of population are very high, leading to a very small $\beta$ value. Dividing by 1000 leads to a higher $\beta$ estimate, which is easier to understand, as it does not get truncated by functions that display the coefficients and their corresponding important information.
 
 $Model:$
+
 
 $$
 Y = \beta_0 + X_1\beta_1 + X_2\beta_2 + X_3\beta_3
@@ -472,19 +475,14 @@ knitr::kable(table)
 ### Completed
 
 
-Hence, we have found our linear model since the previous iteration did not improve the model, with the predictor variables being Square feet ($X_1$), and denstiy ($X_2$).
+Hence, we have found our linear model since the previous iteration did not improve the model, with the predictor variables being Square feet ($X_1$), density ($X_2$), population($X_3$), bathrooms ($X_4$), bedrooms ($X_5$), has photo ($X_6$), and pets allowed ($X_7$).
 
 $$
-Y=\beta_0 + X_1\beta_1 + X_2\beta_2
+Y = \beta_0 + X_1\beta_1 + X_2\beta_2 + X_3\beta_3 + X_4\beta_4 + X_5\beta_5 + X_6\beta_6 + X_7\beta_7
 $$
 
 
 After fitting the model with every predictor, we find that the Population variable results in the lowest P value of the model.
-
-
-
-$32\%$ of the variation in price explained by model
-
 
 ```{r, echo=FALSE}
 
@@ -492,7 +490,7 @@ library(car)
 cleaned$price1 <- log(cleaned$price)
 
 # Update the model to include all specified regressors
-model <- lm(price ~ square_feet + density + log(population) + bathrooms + bedrooms + has_photo + pets_allowed, data=cleaned)
+model <- lm(price ~ square_feet + density + population + bathrooms + bedrooms + has_photo + pets_allowed, data=cleaned)
 
 # Summarize the model
 summary_model <- summary(model)
@@ -501,33 +499,33 @@ summary_model <- summary(model)
 table <- data.frame(
   Statistic = c("Intercept", "Square Feet", "Density", "Population", "Bathrooms", "Bedrooms", "Has Photo", "Pets Allowed"),
   Values = c(
-    round(summary_model$coefficients[1, 1], 4), 
-    round(summary_model$coefficients[2, 1], 4), 
-    round(summary_model$coefficients[3, 1], 4), 
-    round(summary_model$coefficients[4, 1], 4), 
-    round(summary_model$coefficients[5, 1], 4), 
-    round(summary_model$coefficients[6, 1], 4), 
-    round(summary_model$coefficients[7, 1], 4), 
+    round(summary_model$coefficients[1, 1], 4),
+    round(summary_model$coefficients[2, 1], 4),
+    round(summary_model$coefficients[3, 1], 4),
+    round(summary_model$coefficients[4, 1], 4),
+    round(summary_model$coefficients[5, 1], 4),
+    round(summary_model$coefficients[6, 1], 4),
+    round(summary_model$coefficients[7, 1], 4),
     round(summary_model$coefficients[8, 1], 4)
   ),
   SE = c(
-    round(summary_model$coefficients[1, 2], 4), 
-    round(summary_model$coefficients[2, 2], 4), 
-    round(summary_model$coefficients[3, 2], 4), 
-    round(summary_model$coefficients[4, 2], 4), 
-    round(summary_model$coefficients[5, 2], 4), 
-    round(summary_model$coefficients[6, 2], 4), 
-    round(summary_model$coefficients[7, 2], 4), 
+    round(summary_model$coefficients[1, 2], 4),
+    round(summary_model$coefficients[2, 2], 4),
+    round(summary_model$coefficients[3, 2], 4),
+    round(summary_model$coefficients[4, 2], 4),
+    round(summary_model$coefficients[5, 2], 4),
+    round(summary_model$coefficients[6, 2], 4),
+    round(summary_model$coefficients[7, 2], 4),
     round(summary_model$coefficients[8, 2], 4)
   ),
   P_Value = c(
-    summary_model$coefficients[1, 4], 
-    summary_model$coefficients[2, 4], 
-    summary_model$coefficients[3, 4], 
-    summary_model$coefficients[4, 4], 
-    summary_model$coefficients[5, 4], 
-    summary_model$coefficients[6, 4], 
-    summary_model$coefficients[7, 4], 
+    summary_model$coefficients[1, 4],
+    summary_model$coefficients[2, 4],
+    summary_model$coefficients[3, 4],
+    summary_model$coefficients[4, 4],
+    summary_model$coefficients[5, 4],
+    summary_model$coefficients[6, 4],
+    summary_model$coefficients[7, 4],
     summary_model$coefficients[8, 4]
   ),
   R_Squared = c(round(summary_model$r.squared, 4), "", "", "", "", "", "", "")
@@ -535,208 +533,123 @@ table <- data.frame(
 
 # Create the table
 knitr::kable(table, caption = "Summary of Model")
-
 ```
+Note that the coefficient for bedrooms is negative, which we thought was suspicious as usually more bedrooms are more valuable when looking for houses. We thought that this might be due to multicollinearity with the bathrooms variable, so we decided to plot the two against each other.
 
+```{r, echo=FALSE, fig.height=3}
+gg <- ggplot(cleaned, aes(x = bedrooms, y = bathrooms)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+suppressMessages(print(gg))
+```
+We noticed that there seems to be a trend, as when amount of bedrooms go up, amount of bathrooms go up. The $R^2$ value of the line of best fit was also 0.46, indicating a clear trend. Therefore, we decided to remove bedrooms from our model, due to its redundancy, given its correlation with the bathrooms predictor. The $R^2$ of the new model decreases slightly, but is acceptable due to it being a reduction of overfitting.
 
 # Analysis of Residuals - Model Improvement
 
-## Residuals
+We will now conduct a thorough examination of the model's residuals to identify any potential issues.
 
 ### Residuals vs. Fitted Values
 
 ```{r, echo=FALSE}
-model <- lm(price ~ square_feet + density + log(population) + bathrooms + bedrooms + has_photo + pets_allowed, data=cleaned)
-plot(model, which = 1)
+model <- lm(price ~ square_feet + density + population + bathrooms + has_photo + pets_allowed, data=cleaned)
+autoplot(model)
 ```
 
-We can see slight heteroskedasticity in this plot with a slight downward trend. 
-As the fitted values become greater the residuals are greater indicating some model inaccuracy in high ranges. 
+We can see slight heteroskedasticity in the Residuals vs. Fitted plot, with a slight downward trend.
+There are a few outliers points and the model decreases in accuracy for extreme fitted values. Since our model is not able to discern luxury apartments this may explain some of the large outliers. The Q-Q residual plot shows a normal distribution for a good amount of the data. The plot has deviates from the normal distribution around the extremes, meaning our model struggles to predict very large or small rents, but for the vast majority of the data it follows a normal distribution. Again this could be due to features of apartments that our data could not capture, like luxury accommodations or a bad location. The Scale Location plot is not ideal, as the blue line should be horizontal. The means homoscedasticity is violated, but this is likely to have higher variation in high-fitted values. As prices become more expensive, there are factors we can not account for, especially with luxury apartments. The Residuals vs. Leverage plot shows high leverage points, highlighting points that warrant further analysis to determine if they are outliers and whether they accurately reflect the relationship in question.
 
-## Residuals
+## Outliers and Data Transformation
 
-### Quantile-Quantile
-
-```{r, echo=FALSE}
-plot(model, which = 2)
-```
-
-Relatively normal, room for improvement
-
-## Residuals
-
-### Scale-Location
-
-```{r, echo=FALSE}
-plot(model, which = 3)
-```
-
-The Scale Location plot is not ideal, as the red line should be horizontal. The means homoscedasticity is violated, but this is likely to have higher variation in high-fitted values. As prices become more expensive, there are factors we can not account for, especially with luxury apartments.
-
-## Residuals
-
-### Residuals vs. Leverage
-
-```{r, echo=FALSE}
-plot(model, which = 5)
-```
-
-The dotted lines represent Cook's distance, highlighting several points that surpass its threshold. These points indicate high-leverage observations, which warrant further analysis to determine if they are outliers and whether they accurately reflect the relationship in question.
-
-## Adjusted Model
-
-### Outliers and Data Transformation
-
-Address non-normality through Box-Cox transformation
-
+A few points show up multiple times as outliers/high leverage points, being the apartments denoted by the indexes 6754, 18779, and 20556. After analyzing these points, we see that their price differs from the price in the description of the apartment, leading us to believe that these apartments were mistakenly inputted into the dataset. To address the non-normality and heteroscedasticity observed in some plots, we applied a Box-Cox transformation to the data. This transformation assists in normalizing the data and stabilizing variance.
 ```{r, echo=FALSE}
 boxCox(model)
 ```
-
--   Optimal $\lambda$ close to 0
-
+The BoxCox formula is: $y(\lambda) = \frac{y^\lambda - 1}{\lambda}  \text{ if } \lambda \neq 0, \ln(y), \text{ if } \lambda = 0$ Since the optimal lambda value is close to 0, we can simply take a logarithm of the price, as defined by the BoxCox formula. Our adjusted model is then:
 $$
-y(\lambda) =
-\begin{cases}
-\frac{y^\lambda - 1}{\lambda}, & \text{if } \lambda \neq 0 \\[10pt]
-\ln(y), & \text{if } \lambda = 0
-\end{cases}
+Y = \beta_0 + X_1\beta_1 + X_2\beta_2 + X_3\beta_3 + X_4\beta_4 + X_6\beta_6 + X_7\beta_7
 $$
-
-## Adjusted Model
-
-### Summary
-
-Our adjusted model is: $\text{ln}(Y)=\beta_0+X_1\beta_1+X_2\beta_2$
-
+where the predictors are square feet ($X_1$), density ($X_2$), population($X_3$), bathrooms ($X_4$), has photo ($X_6$), and pets allowed ($X_7$).
 ```{r, echo=FALSE}
 cleaned_new <- cleaned[-c(6754, 20556, 18779, 29745), ]
 cleaned_new1 <- cleaned_new[-15668, ]
-model_new <- lm(log(price) ~ square_feet + density, data=cleaned_new1)
+cleaned_new2 <- cleaned_new[-c(15668, 3895), ]
+cleaned_new3 <- cleaned_new[-c(15668), ]
+model_new <- lm(log(price) ~ square_feet + density + log(population) + bathrooms + has_photo + pets_allowed, data=cleaned_new3)
 summary_model <- summary(model_new)
 table <- data.frame(
-  Statistic = c("Intercept", "Square Feet", "Density"),
-  Values = c(round(summary_model$coefficients[1,1], 4),round(summary_model$coefficients[2,1], 4),round(summary_model$coefficients[3,1], 4)),
-  SE = c(round(summary_model$coefficients[1,2],4),round(summary_model$coefficients[2,2], 4),round(summary_model$coefficients[3,2],4)),
-  P_Value = c(summary_model$coefficients[1,4],summary_model$coefficients[2,4],summary_model$coefficients[3,4]),
-  R_Squared = c(round(summary_model$r.squared,4), "", "")
+  Statistic = c("Intercept", "Square Feet", "Density", "Population", "Bathrooms", "Has Photo", "Pets Allowed"),
+  Values = c(
+    round(summary_model$coefficients[1, 1], 4),
+    round(summary_model$coefficients[2, 1], 4),
+    round(summary_model$coefficients[3, 1], 4),
+    round(summary_model$coefficients[4, 1], 4),
+    round(summary_model$coefficients[5, 1], 4),
+    round(summary_model$coefficients[6, 1], 4),
+    round(summary_model$coefficients[7, 1], 4)
+  ),
+  SE = c(
+    round(summary_model$coefficients[1, 2], 4),
+    round(summary_model$coefficients[2, 2], 4),
+    round(summary_model$coefficients[3, 2], 4),
+    round(summary_model$coefficients[4, 2], 4),
+    round(summary_model$coefficients[5, 2], 4),
+    round(summary_model$coefficients[6, 2], 4),
+    round(summary_model$coefficients[7, 2], 4)
+  ),
+  P_Value = c(
+    summary_model$coefficients[1, 4],
+    summary_model$coefficients[2, 4],
+    summary_model$coefficients[3, 4],
+    summary_model$coefficients[4, 4],
+    summary_model$coefficients[5, 4],
+    summary_model$coefficients[6, 4],
+    summary_model$coefficients[7, 4]
+  ),
+  R_Squared = c(round(summary_model$r.squared, 4), "", "", "", "", "", "")
 )
-  knitr::kable(table, caption = "Summary of Model")
+
+# Create the table
+knitr::kable(table, caption = "Summary of Model")
 ```
 
-
-## Adjusted Model Residuals
-
-### Residuals vs. Fitted Values
-
-**Previous**
-
-```{r fig.height=8, fig.width=10, echo=FALSE}
-plot(model, which = 1)
+The $R^2$ improved from 0.3433 to 0.3455, which is a very slight but noticeable improvement. Let us now see the effects the transformation had on the residuals, which is more important.
+```{r, echo=FALSE}
+autoplot(model_new)
 ```
-
-**Adjusted**
-
-```{r fig.height=8, fig.width=10, echo=FALSE}
-plot(model_new, which = 1)
-```
-
-Normallity improved slightly
-
-## Adjusted Model Residuals
-
-### Quantile-Quantile
-
-**Previous**
-
-```{r fig.height=8, fig.width=10, echo=FALSE}
-plot(model, which = 2)
-```
-**Adjusted**
-
-```{r fig.height=8, fig.width=10, echo=FALSE}
-plot(model_new, which = 2)
-```
-
-Significant Improvment 
+In the Residuals vs Fitted plot, residuals for lower-priced houses are more evenly distributed around zero, although the model still struggles with higher-priced apartments, as indicated by the skewness of the red line. The QQ plot reflects enhanced accuracy, particularly in the upper tail, with the maximum of the standardized residuals decreasing from nearly 60 to about 5, showing the theoretical and predicted residuals are closer together. The Scale-Location plot suggests that while homoscedasticity issues persist for high fitted values, the data for lower fitted values is now more normally distributed. The Residuals vs Leverage plot shows similar information, but since we removed all high leverage points (which were outliers), there are no points which lie outside of the Cook's distance. Overall, the normality and homoscedasticity of the residuals improved, indicating that our transformation made the linear model more accurate.
 
 
-## Adjusted Model Residuals
+## Confidence Interval for a Real Apartment Listing
 
-### Scale-Location
+To test our model on relevant data, we found a real apartment listing around Rice. The density metric was taken from the dataset, multiplied by 2 to account for the higher density of the area around the Med Center.  The confidence interval generated by the model:
 
+::: {.columns}
+::: {.column width=70%}
 
-**Previous**
-
-```{r fig.height=8, fig.width=10, echo=FALSE}
-plot(model, which = 3)
-```
-
-**Adjusted**
-
-```{r fig.height=8, fig.width=10, echo=FALSE}
-plot(model_new, which = 3)
-```
-
-Slight homoscedasticity
-
-## Adjusted Model Residuals
-
-### Residuals vs. Leverage
-
-**Previous**
-
-```{r fig.height=8, fig.width=10, echo=FALSE}
-plot(model, which = 5)
-```
-
-**Adjusted**
-
-```{r fig.height=8, fig.width=10, echo=FALSE}
-plot(model_new, which = 5)
-```
-
-Less high leverage points/outliers
-
-## Confidence Interval
-
-### Real Apartment Listing
-
-The confidence interval generated by the model:
-
+![](./apartment_photo.png){width=400 .center}
+:::
+::: {.column width=30%}
 ```{r, echo=FALSE}
 calculated_density <- cities %>% filter(city == "houston", state_id == "TX") %>% select(density)
-predictions <- predict(model_new, data.frame(square_feet = c(1200), density = c(2*calculated_density)), interval = "confidence", level = 0.95)
+predictions <- predict(model_new, data.frame(square_feet = c(1200), density = c(2*calculated_density), population=c(2300000), bathrooms = c(2),has_photo=c(1), pets_allowed=c(0)), interval = "confidence", level = 0.95)
 knitr::kable(exp(predictions))
 ```
+:::
+:::
 
-
--   Density metric was taken from the dataset
--   Scaled to account for higher density
-
-
-Good Prediction
+We see that the predicted price falls within the confidence interval! Especially with the high variance of the data, this is a successful result.
 
 ## Summary
 
 
--   Explored the data and found 8 usable regressors 5 of which were continuous and 3 of which were categorical
--   We used Forward Step wise Search to build our model and found 2 regressors for our final model, square_feet and density
--   Adjusted our model to take the log of price which improved $R^2$
-
-Limitations
+In our analysis, we explored the data and identified eight usable regressors, comprising five continuous and three categorical variables. We employed a Forward Stepwise Search to construct our model, using 6 of the 8 regressors, then enhanced it by taking the logarithm of the price, which resulted in an improved normality and $R^2$. However, there are some limitations to our approach. Forward Stepwise Search is a greedy algorithm, meaning it makes the best choice at each step but does not guarantee the most optimal solution overall. In future work, we aim to expand our dataset to include more regressors. Our group hypothesizes that a regressor representing the luxuriousness of an apartment could have a significant impact on the model. Additionally, incorporating interaction terms might help account for nonlinear effects.
 
 
--   Since Forward Step Wise Search is a greedy algorithm so it makes the best choice at each step and does not guarentee the most optimal solution
--   In the future we would like a data set with more regressors, our group hypothesizes that a regressor that represents the apartments luxuriousness would have a significant impact
-    -   Could also use interaction terms to account for nonlinear effects
-    
-    
 ## Reflection
 
-Our group spent about 18 hours on this project. Our first problem was that we couldn’t find good data. Initially, we started with the idea to predict the probability that a NCAA Baseball Team wins a game given a log of all NCAA college games from last year. But, we ran into the problem with the data that we had hoped to use. Luckily, a few of our group members brought up that they were looking for apartments next year and so we decided to find data that fit that idea. We were able to find clean data and started our forward selection process to find the most important variables. Our second problem was that we had a few outlier points. Instead of removing without any evidence as to if it was a high leverage point, initially we removed these points. After further thought, we decided to test if these points were of high leverage before removing and gave us more insight into our data. 
+Our group spent about 18 hours on this project. Our first problem was that we couldn’t find good data. Initially, we started with the idea to predict the probability that a NCAA Baseball Team wins a game given a log of all NCAA college games from last year. But, we ran into the problem with the data that we had hoped to use. Luckily, a few of our group members brought up that they were looking for apartments next year and so we decided to find data that fit that idea. We were able to find clean data and started our forward selection process to find the most important variables. Our second problem was that we had a few outlier points. Instead of removing without any evidence as to if it was a high leverage point, initially we removed these points. After further thought, we decided to test if these points were of high leverage before removing and gave us more insight into our data.
 
-The following were some items that we learned by doing this project: Forward Stepwise Search, and specifically how to decide whether to add a variable into the data or NOT. AIC and its variants, which helps measure trade off between model fit and complexity with a penalty for more complexity introduced into the model. How to look for GOOD data, i.e. data that is easy to clean and friendly in R’s environment. How to read different plots, such as the Residuals vs. Fitted Values, the Quantile Quantile Plot, and the Residuals vs. Leverage. For instance, for the Quantile Quantile plot, we were able to determine if our data compares to the distribution of a normal distribution. How to adjust the model such as adding a scaling function like a natural logarithm function. 
+The following were some items that we learned by doing this project: Forward Stepwise Search, and specifically how to decide whether to add a variable into the data or NOT. AIC and its variants, which helps measure trade off between model fit and complexity with a penalty for more complexity introduced into the model. How to look for GOOD data, i.e. data that is easy to clean and friendly in R’s environment. How to read different plots, such as the Residuals vs. Fitted Values, the Quantile Quantile Plot, and the Residuals vs. Leverage. For instance, for the Quantile Quantile plot, we were able to determine if our data compares to the distribution of a normal distribution. How to adjust the model such as adding a scaling function like a natural logarithm function.
 
 Advice that I would give students next time and that I wish I knew was how important it is to pick good data. This made our process a lot easier because the data was easily manipulated in R.
 
