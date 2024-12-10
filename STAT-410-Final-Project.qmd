@@ -11,6 +11,8 @@ library(data.table)
 library(dplyr)
 library(stringr)
 library(car)
+library(knitr)
+library(gridExtra)
 ```
 
 ```{r, echo=FALSE, include=FALSE}
@@ -55,7 +57,7 @@ Therefore, for our final project, we aim to address the problem of accurately pr
 ## Definitions
 
 1.  $AIC$: Measures trade off between model fit and complexity with a penalty for more complexity
-2.  $AIC_c$: Corrected version of AIC with a larger penalty for regressors
+2.  $AICc$: Corrected version of AIC with a larger penalty for regressors
 3.  $BIC$: Penalizes model complexity heavily and favors simple model with large sample sizes
 4.  $PRESS$: Predicted Residual Error Sum of Squares; predicts how accurate a model is at predicting data it hasn't seen before
 
@@ -77,51 +79,47 @@ hist(data$price,
 
 ##  Data Synopsis for All Variables
 ```{r data, echo=FALSE}
-table <- data.frame(
+table1 <- data.frame(
   Statistic = c("Mean Price", "Max Price", "Min Price", "Median Price"),
   Value = c(round(mean(cleaned$price, na.rm = TRUE)),
             round(max(cleaned$price, na.rm = TRUE)),
             round(min(cleaned$price, na.rm = TRUE)),
             round(median(cleaned$price, na.rm = TRUE))
 ))
-knitr::kable(table)
 
 data$square_feet <- as.numeric(data$square_feet)
 
-table <- data.frame(
+table2 <- data.frame(
   Statistic = c("Mean Square Feet", "Max Square Feet", "Min Square Feet", "Median Square Feet"),
   Value = c(round(mean(cleaned$square_feet, na.rm = TRUE)),
             round(max(cleaned$square_feet, na.rm = TRUE)),
             round(min(cleaned$square_feet, na.rm = TRUE)),
             round(median(cleaned$square_feet, na.rm = TRUE))
 ))
-knitr::kable(table)
 
 cleaned$bedrooms <- as.numeric(cleaned$bedrooms)
 
-table <- data.frame(
+table3 <- data.frame(
   Statistic = c("Mean Bedrooms", "Max Bedrooms", "Min Bedrooms", "Median Bedrooms"),
   Value = c(round(mean(cleaned$bedrooms, na.rm=TRUE)),
             max(cleaned$bedrooms, na.rm = TRUE),
             min(cleaned$bedrooms, na.rm = TRUE),
             median(cleaned$bedrooms, na.rm=TRUE)
 ))
-knitr::kable(table)
 
 cleaned$bathrooms <- as.numeric(cleaned$bathrooms)
 
 
-table <- data.frame(
-  Statistic = c("Mean Bedrooms", "Max Bathrooms", "Min Bathrooms", "Median Bedrooms"),
+table4 <- data.frame(
+  Statistic = c("Mean Bathrooms", "Max Bathrooms", "Min Bathrooms", "Median Bathrooms"),
   Value = c(round(mean(cleaned$bathrooms, na.rm=TRUE)),
             max(cleaned$bathrooms, na.rm = TRUE),
             min(cleaned$bathrooms, na.rm = TRUE),
             median(cleaned$bathrooms, na.rm=TRUE)
             
 ))
-knitr::kable(table)
 
-table <- data.frame(
+table5 <- data.frame(
   Statistic = c("Mean Population", "Max Population", "Min Population", "Median Population"),
   Value = c(round(mean(cleaned$population, na.rm=TRUE)),
             max(cleaned$population, na.rm = TRUE),
@@ -129,11 +127,8 @@ table <- data.frame(
             median(cleaned$population, na.rm=TRUE)
             
 ))
-knitr::kable(table)
 
-
-
-table <- data.frame(
+table6 <- data.frame(
   Statistic = c("Mean Density", "Max Density", "Min Density", "Median Density"),
   Value = c(round(mean(cleaned$density, na.rm=TRUE)),
             max(cleaned$density, na.rm = TRUE),
@@ -141,9 +136,8 @@ table <- data.frame(
             median(cleaned$density, na.rm=TRUE)
             
 ))
-knitr::kable(table)
 
-table <- data.frame(
+table7 <- data.frame(
   Statistic = c("Mean Density", "Max Density", "Min Density", "Median Density"),
   Value = c(round(mean(cleaned$density, na.rm=TRUE)),
             max(cleaned$density, na.rm = TRUE),
@@ -151,15 +145,32 @@ table <- data.frame(
             median(cleaned$density, na.rm=TRUE)
             
 ))
-knitr::kable(table)
 
-table <- data.frame(
+table8 <- data.frame(
   Statistic = c("Proportion with Photos", "Proportion with fees", "Proportion that allow pets"),
   Value = c(round(sum(cleaned$has_photo)/nrow(cleaned), 3),
             round(sum(cleaned$fee)/nrow(cleaned), 3),
             round(sum(cleaned$pets_allowed)/nrow(cleaned), 3)
 ))
-knitr::kable(table)
+
+# Convert tables to ggplot objects
+table1_ggplot <- ggplot(data = NULL) + geom_blank() + theme_minimal() + annotation_custom(tableGrob(table1))
+table2_ggplot <- ggplot(data = NULL) + geom_blank() + theme_minimal() + annotation_custom(tableGrob(table2))
+
+# Charts display side by side
+grid.arrange(table1_ggplot, table2_ggplot, ncol = 2)
+
+table3_ggplot <- ggplot(data = NULL) + geom_blank() + theme_minimal() + annotation_custom(tableGrob(table3))
+table4_ggplot <- ggplot(data = NULL) + geom_blank() + theme_minimal() + annotation_custom(tableGrob(table4))
+grid.arrange(table3_ggplot, table4_ggplot, ncol = 2)
+
+table5_ggplot <- ggplot(data = NULL) + geom_blank() + theme_minimal() + annotation_custom(tableGrob(table5))
+table6_ggplot <- ggplot(data = NULL) + geom_blank() + theme_minimal() + annotation_custom(tableGrob(table6))
+grid.arrange(table5_ggplot, table6_ggplot, ncol = 2)
+
+table7_ggplot <- ggplot(data = NULL) + geom_blank() + theme_minimal() + annotation_custom(tableGrob(table7))
+table8_ggplot <- ggplot(data = NULL) + geom_blank() + theme_minimal() + annotation_custom(tableGrob(table8))
+grid.arrange(table7_ggplot, table8_ggplot, ncol = 2)
 ```
 
 
@@ -267,9 +278,6 @@ rownames(mat) <- c("First Iteration", "Second Iteration", "Difference")
 table <- as.data.frame(mat)
 
 knitr::kable(table)
-
-
-
 ```
 
 
